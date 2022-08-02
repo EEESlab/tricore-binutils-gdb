@@ -93,6 +93,7 @@
 #define ARCH_tic54x
 #define ARCH_tic6x
 #define ARCH_tilepro
+#define ARCH_tricore
 #define ARCH_v850
 #define ARCH_vax
 #define ARCH_visium
@@ -545,6 +546,11 @@ disassembler (enum bfd_architecture a,
 #ifdef ARCH_tilepro
     case bfd_arch_tilepro:
       disassemble = print_insn_tilepro;
+      break;
+#endif
+#ifdef ARCH_tricore
+    case bfd_arch_tricore:
+      disassemble = print_insn_tricore;
       break;
 #endif
 #ifdef ARCH_loongarch

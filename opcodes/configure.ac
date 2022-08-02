@@ -333,6 +333,7 @@ if test x${all_targets} = xfalse ; then
 	bfd_tic6x_arch)		ta="$ta tic6x-dis.lo" ;;
 	bfd_tilegx_arch)	ta="$ta tilegx-dis.lo tilegx-opc.lo" ;;
 	bfd_tilepro_arch)	ta="$ta tilepro-dis.lo tilepro-opc.lo" ;;
+	bfd_tricore_arch)	ta="$ta tricore-dis.lo tricore-opc.lo" ;;
 	bfd_v850_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
 	bfd_v850e_arch)		ta="$ta v850-opc.lo v850-dis.lo" ;;
 	bfd_v850ea_arch)	ta="$ta v850-opc.lo v850-dis.lo" ;;

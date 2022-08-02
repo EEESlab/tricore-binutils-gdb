@@ -252,6 +252,8 @@ TARGET32_LIBOPCODES_CFILES = \
 	tic6x-dis.c \
 	tilepro-dis.c \
 	tilepro-opc.c \
+	tricore-dis.c \
+	tricore-opc.c \ 
 	v850-dis.c \
 	v850-opc.c \
 	vax-dis.c \

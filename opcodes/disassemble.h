@@ -89,6 +89,7 @@ extern int print_insn_tic54x		(bfd_vma, disassemble_info *);
 extern int print_insn_tic6x		(bfd_vma, disassemble_info *);
 extern int print_insn_tilegx		(bfd_vma, disassemble_info *);
 extern int print_insn_tilepro		(bfd_vma, disassemble_info *);
+extern int print_insn_tricore		(bfd_vma, disassemble_info *);
 extern int print_insn_v850		(bfd_vma, disassemble_info *);
 extern int print_insn_vax		(bfd_vma, disassemble_info *);
 extern int print_insn_visium		(bfd_vma, disassemble_info *);
