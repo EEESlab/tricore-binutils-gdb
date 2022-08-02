@@ -154,7 +154,7 @@
 #define EM_OLD_ALPHA	 41	/* Digital Alpha */
 #define EM_SH		 42	/* Renesas (formerly Hitachi) / SuperH SH */
 #define EM_SPARCV9	 43	/* SPARC v9 64-bit */
-#define EM_TRICORE	 44	/* Siemens Tricore embedded processor */
+#define EM_TRICORE	 44	/* Infineon Tricore embedded processor */
 #define EM_ARC		 45	/* ARC Cores */
 #define EM_H8_300	 46	/* Renesas (formerly Hitachi) H8/300 */
 #define EM_H8_300H	 47	/* Renesas (formerly Hitachi) H8/300H */

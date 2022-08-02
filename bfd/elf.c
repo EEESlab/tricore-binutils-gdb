@@ -4931,7 +4931,6 @@ _bfd_elf_map_sections_to_segments (bfd *abfd,
 
 	  *pm = m;
 	  pm = &m->next;
-
 	  if ((hdr->flags & SEC_READONLY) == 0)
 	    writable = true;
 	  else
@@ -6463,10 +6462,17 @@ assign_file_positions_except_relocs (bfd *abfd,
 				    abfd);
 	      else if (phdr->p_type == PT_LOAD
 		       && ((phdr->p_flags & (PF_R | PF_W | PF_X))
-			   == (PF_R | PF_W | PF_X)))
+			   == (PF_R | PF_W | PF_X))) 
 		_bfd_error_handler (_("warning: %pB has a LOAD segment"
 				      " with RWX permissions"),
 				    abfd);
+/*		_bfd_elf_print_private_bfd_data(abfd, stdout);
+		asection *bdata;
+                for (bdata = abfd->sections; bdata; bdata = bdata->next)
+                 {
+			 printf("  %s\n", bdata->name);
+		 }
+*/
 	    }
 	}
 
@@ -7913,6 +7919,7 @@ _bfd_elf_init_private_section_data (bfd *ibfd,
   if (ibfd->xvec->flavour != bfd_target_elf_flavour
       || obfd->xvec->flavour != bfd_target_elf_flavour)
     return true;
+
 
   BFD_ASSERT (elf_section_data (osec) != NULL);
 

@@ -909,6 +909,10 @@ case $basic_machine in
 		cpu=m68k
 		vendor=ncr
 		;;
+	tricore-*)
+		vendor=infineon
+		basic_os=${basic_os:-elf}
+		;;
 	vpp*|vx|vx-*)
 		cpu=f301
 		vendor=fujitsu
@@ -1130,9 +1134,9 @@ case $cpu-$vendor in
 		cpu=aarch64
 		;;
 
-	# Recognize the canonical CPU Types that limit and/or modify the
-	# company names they are paired with.
-	cr16-*)
+		# Recognize the canonical CPU Types that limit and/or modify the
+		# company names they are paired with.
+		cr16-*)
 		basic_os=${basic_os:-elf}
 		;;
 	crisv32-* | etraxfs*-*)
@@ -1270,6 +1274,7 @@ case $cpu-$vendor in
 			| tahoe \
 			| thumbv7* \
 			| tic30 | tic4x | tic54x | tic55x | tic6x | tic80 \
+			| tricore \
 			| tron \
 			| ubicom32 \
 			| v70 | v850 | v850e | v850e1 | v850es | v850e2 | v850e2v3 \

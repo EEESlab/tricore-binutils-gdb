@@ -630,6 +630,17 @@ typedef struct bfd_section
      TMS320C54X only.  */
 #define SEC_TIC54X_CLINK           0x20000000
 
+  /* The higher 3-bits in a flag word are used to encode a core identification
+     number. This is for Infineon Tricore only. */
+#define SEC_TRICORE_CORE_MASK   0xe0000000
+#define SEC_TRICORE_CORE_SHIFT  29
+#define SEC_TRICORE_CORE(n)     (((n) & 0x7) << SEC_TRICORE_CORE_SHIFT)
+#define SEC_TRICORE_CORE_GET(n) (((n) & SEC_TRICORE_CORE_MASK)  \
+		                 >> SEC_TRICORE_CORE_SHIFT)
+
+  /* An absolute addressable section.  This is for Infineon Tricore only.  */
+#define SEC_TRICORE_ABSOLUTE_DATA    0x04000000
+
   /* This section contains vliw code.  This is for Toshiba MeP only.  */
 #define SEC_MEP_VLIW               0x20000000
 
@@ -1598,6 +1609,7 @@ enum bfd_architecture
 #define bfd_mach_tic4x         40
   bfd_arch_tic54x,    /* Texas Instruments TMS320C54X.  */
   bfd_arch_tic6x,     /* Texas Instruments TMS320C6X.  */
+  bfd_arch_tricore,   /* Infineon TriCore */
   bfd_arch_v850,      /* NEC V850.  */
   bfd_arch_v850_rh850,/* NEC V850 (using RH850 ABI).  */
 #define bfd_mach_v850          1
@@ -7136,6 +7148,100 @@ assembler and not (currently) written to any object files.  */
   BFD_RELOC_TILEGX_IMM8_X1_TLS_ADD,
   BFD_RELOC_TILEGX_IMM8_Y0_TLS_ADD,
   BFD_RELOC_TILEGX_IMM8_Y1_TLS_ADD,
+
+/* These are relocation types defined in the TriCore EABI.  */
+  BFD_RELOC_TRICORE_NONE,
+  BFD_RELOC_TRICORE_32REL,
+  BFD_RELOC_TRICORE_32ABS,
+  BFD_RELOC_TRICORE_24REL,
+  BFD_RELOC_TRICORE_24ABS,
+  BFD_RELOC_TRICORE_16SM,
+  BFD_RELOC_TRICORE_HIADJ,
+  BFD_RELOC_TRICORE_LO,
+  BFD_RELOC_TRICORE_LO2,
+  BFD_RELOC_TRICORE_18ABS,
+  BFD_RELOC_TRICORE_10SM,
+  BFD_RELOC_TRICORE_15REL,
+
+/* These are GNU extensions of TriCore relocations, which allow
+to relocate all non-register operands.  */
+  BFD_RELOC_TRICORE_HI,
+  BFD_RELOC_TRICORE_16CONST,
+  BFD_RELOC_TRICORE_9ZCONST,
+  BFD_RELOC_TRICORE_9SCONST,
+  BFD_RELOC_TRICORE_8REL,
+  BFD_RELOC_TRICORE_8CONST,
+  BFD_RELOC_TRICORE_10OFF,
+  BFD_RELOC_TRICORE_16OFF,
+  BFD_RELOC_TRICORE_8ABS,
+  BFD_RELOC_TRICORE_16ABS,
+  BFD_RELOC_TRICORE_1BIT,
+  BFD_RELOC_TRICORE_3POS,
+  BFD_RELOC_TRICORE_5POS,
+  BFD_RELOC_TRICORE_5POS2,
+  BFD_RELOC_TRICORE_BRCC,
+  BFD_RELOC_TRICORE_BRCZ,
+  BFD_RELOC_TRICORE_BRNN,
+  BFD_RELOC_TRICORE_RRN,
+  BFD_RELOC_TRICORE_4CONST,
+  BFD_RELOC_TRICORE_4REL,
+  BFD_RELOC_TRICORE_4REL2,
+  BFD_RELOC_TRICORE_5POS3,
+  BFD_RELOC_TRICORE_4OFF,
+  BFD_RELOC_TRICORE_4OFF2,
+  BFD_RELOC_TRICORE_4OFF4,
+  BFD_RELOC_TRICORE_42OFF,
+  BFD_RELOC_TRICORE_42OFF2,
+  BFD_RELOC_TRICORE_42OFF4,
+  BFD_RELOC_TRICORE_2OFF,
+  BFD_RELOC_TRICORE_8CONST2,
+  BFD_RELOC_TRICORE_4POS,
+  BFD_RELOC_TRICORE_16SM2,
+  BFD_RELOC_TRICORE_5REL,
+
+/* These are GNU extensions of TriCore relocations, which allow
+the linker to optimize virtual tables (C++).  */
+  BFD_RELOC_TRICORE_GNU_VTENTRY,
+  BFD_RELOC_TRICORE_GNU_VTINHERIT,
+
+/* These TriCore relocations add support for shared objects.  */
+  BFD_RELOC_TRICORE_PCREL16,
+  BFD_RELOC_TRICORE_PCREL8,
+  BFD_RELOC_TRICORE_GOT,
+  BFD_RELOC_TRICORE_GOT2,
+  BFD_RELOC_TRICORE_GOTHI,
+  BFD_RELOC_TRICORE_GOTLO,
+  BFD_RELOC_TRICORE_GOTLO2,
+  BFD_RELOC_TRICORE_GOTUP,
+  BFD_RELOC_TRICORE_GOTOFF,
+  BFD_RELOC_TRICORE_GOTOFF2,
+  BFD_RELOC_TRICORE_GOTOFFHI,
+  BFD_RELOC_TRICORE_GOTOFFLO,
+  BFD_RELOC_TRICORE_GOTOFFLO2,
+  BFD_RELOC_TRICORE_GOTOFFUP,
+  BFD_RELOC_TRICORE_GOTPC,
+  BFD_RELOC_TRICORE_GOTPC2,
+  BFD_RELOC_TRICORE_GOTPCHI,
+  BFD_RELOC_TRICORE_GOTPCLO,
+  BFD_RELOC_TRICORE_GOTPCLO2,
+  BFD_RELOC_TRICORE_GOTPCUP,
+  BFD_RELOC_TRICORE_PLT,
+  BFD_RELOC_TRICORE_COPY,
+  BFD_RELOC_TRICORE_GLOB_DAT,
+  BFD_RELOC_TRICORE_JMP_SLOT,
+  BFD_RELOC_TRICORE_RELATIVE,
+
+/* This supports allocating single bit objects.  */
+  BFD_RELOC_TRICORE_BITPOS,
+
+/* This supports accesing small area base register of a symbol  */
+  BFD_RELOC_TRICORE_SBREG_S2,
+  BFD_RELOC_TRICORE_SBREG_S1,
+  BFD_RELOC_TRICORE_SBREG_D,
+
+/* This supports 32-bit absolute address with low 14-bit zero  */
+  BFD_RELOC_TRICORE_18ABS_14,
+
 
 /* Linux eBPF relocations.  */
   BFD_RELOC_BPF_64,

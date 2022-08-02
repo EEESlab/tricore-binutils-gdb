@@ -921,6 +921,7 @@ extern const bfd_target tilegx_elf32_le_vec;
 extern const bfd_target tilegx_elf64_be_vec;
 extern const bfd_target tilegx_elf64_le_vec;
 extern const bfd_target tilepro_elf32_vec;
+extern const bfd_target tricore_elf32_vec;
 extern const bfd_target v800_elf32_vec;
 extern const bfd_target v850_elf32_vec;
 extern const bfd_target ft32_elf32_vec;
@@ -1323,6 +1324,8 @@ static const bfd_target * const _bfd_target_vector[] =
 	&tilegx_elf64_le_vec,
 #endif
 	&tilepro_elf32_vec,
+	
+	&tricore_elf32_vec,
 
 	&ft32_elf32_vec,
 

@@ -8667,6 +8667,25 @@ _bfd_elf_match_sections_by_type (bfd *abfd, const asection *asec,
       || bbfd->xvec->flavour != bfd_target_elf_flavour)
     return true;
 
+  if (elf_section_type (asec) == elf_section_type (bsec))
+  {
+    Elf_Internal_Ehdr *ehdr;
+    ehdr = elf_elfheader (abfd);
+
+    /* Check the core flags in Tricore. */
+    if (ehdr->e_machine == EM_TRICORE
+	&& ((asec->flags & SEC_TRICORE_CORE_MASK)
+            || (bsec->flags & SEC_TRICORE_CORE_MASK)))
+    {
+      if ((asec->flags ^ bsec->flags) & SEC_TRICORE_CORE_MASK)
+        {
+          /* Sections are for different cores. */
+          return false;
+        }
+    }
+
+    return true;
+  }
   return elf_section_type (asec) == elf_section_type (bsec);
 }
 

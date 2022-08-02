@@ -467,6 +467,7 @@ _bfd_link_hash_table_init
   bool ret;
 
   BFD_ASSERT (!abfd->is_linker_output && !abfd->link.hash);
+
   table->undefs = NULL;
   table->undefs_tail = NULL;
   table->type = bfd_link_generic_hash_table;

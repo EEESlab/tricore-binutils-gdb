@@ -9662,6 +9662,9 @@ case "${target}" in
   nios2-*-elf*)
     target_makefile_frag="config/mt-nios2-elf"
     ;;
+  tricore*)
+     target_makefile_frag="config/mt-tricore"
+    ;;
   *-*-linux-android*)
     target_makefile_frag="config/mt-android"
     ;;

@@ -688,6 +688,7 @@ extern const bfd_arch_info_type bfd_tic54x_arch;
 extern const bfd_arch_info_type bfd_tic6x_arch;
 extern const bfd_arch_info_type bfd_tilegx_arch;
 extern const bfd_arch_info_type bfd_tilepro_arch;
+extern const bfd_arch_info_type bfd_tricore_arch;
 extern const bfd_arch_info_type bfd_v850_arch;
 extern const bfd_arch_info_type bfd_v850_rh850_arch;
 extern const bfd_arch_info_type bfd_vax_arch;
@@ -774,6 +775,7 @@ static const bfd_arch_info_type * const bfd_archures_list[] =
     &bfd_tic6x_arch,
     &bfd_tilegx_arch,
     &bfd_tilepro_arch,
+    &bfd_tricore_arch,
     &bfd_v850_arch,
     &bfd_v850_rh850_arch,
     &bfd_vax_arch,
