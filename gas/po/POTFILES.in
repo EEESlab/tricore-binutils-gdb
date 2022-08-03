@@ -165,6 +165,8 @@ config/tc-tilegx.c
 config/tc-tilegx.h
 config/tc-tilepro.c
 config/tc-tilepro.h
+config/tc-tricore.c
+config/tc-tricore.h
 config/tc-v850.c
 config/tc-v850.h
 config/tc-vax.c

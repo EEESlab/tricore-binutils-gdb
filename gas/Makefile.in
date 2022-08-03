@@ -687,6 +687,7 @@ TARGET_CPU_CFILES = \
 	config/tc-tic6x.c \
 	config/tc-tilegx.c \
 	config/tc-tilepro.c \
+	config/tc-tricore.c \
 	config/tc-v850.c \
 	config/tc-vax.c \
 	config/tc-visium.c \
@@ -760,6 +761,7 @@ TARGET_CPU_HFILES = \
 	config/tc-tic6x.h \
 	config/tc-tilegx.h \
 	config/tc-tilepro.h \
+	config/tc-tricore.h \
 	config/tc-v850.h \
 	config/tc-vax.h \
 	config/tc-visium.h \
@@ -1208,6 +1210,8 @@ config/tc-tilegx.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-tilepro.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
+config/tc-tricore.$(OBJEXT): config/$(am__dirstamp) \
+        config/$(DEPDIR)/$(am__dirstamp)
 config/tc-v850.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-vax.$(OBJEXT): config/$(am__dirstamp) \
@@ -1422,6 +1426,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-tic6x.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-tilegx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-tilepro.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-tricore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-v850.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-vax.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-visium.Po@am__quote@

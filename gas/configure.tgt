@@ -111,6 +111,7 @@ case ${cpu} in
   sparc*)		cpu_type=sparc arch=sparclite ;; # ??? See tc-sparc.c.
   tilegx*be)		cpu_type=tilegx endian=big ;;
   tilegx*)		cpu_type=tilegx endian=little ;;
+  tricore*)		cpu_type=tricore ;;
   v850*)		cpu_type=v850 ;;
   visium)		cpu_type=visium endian=big ;;
   wasm32)               cpu_type=wasm32 endian=little ;;
@@ -412,6 +413,8 @@ case ${generic_target} in
   tic6x-*-*)				fmt=elf ;;
 
   tilepro-*-* | tilegx*-*-*)		fmt=elf ;;
+
+  tricore-*-elf*)			fmt=elf ;;
 
   v850*-*-*)				fmt=elf ;;
 
