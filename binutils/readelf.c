@@ -158,6 +158,7 @@
 #include "elf/tic6x.h"
 #include "elf/tilegx.h"
 #include "elf/tilepro.h"
+#include "elf/tricore.h"
 #include "elf/v850.h"
 #include "elf/vax.h"
 #include "elf/visium.h"
@@ -1882,6 +1883,10 @@ dump_relocations (Filedata *filedata,
 	  rtype = elf_tilepro_reloc_type (type);
 	  break;
 
+	case EM_TRICORE:
+	  rtype = elf32_tricore_reloc_type (type);
+	  break;
+
 	case EM_WEBASSEMBLY:
 	  rtype = elf_wasm32_reloc_type (type);
 	  break;
@@ -2776,7 +2781,7 @@ get_machine_name (unsigned e_machine)
     case EM_OLD_ALPHA:		return "Digital Alpha (old)";
     case EM_SH:			return "Renesas / SuperH SH";
     case EM_SPARCV9:		return "Sparc v9";
-    case EM_TRICORE:		return "Siemens Tricore";
+    case EM_TRICORE:		return "Infineon Tricore";
     case EM_ARC:		return "ARC";
     case EM_H8_300:		return "Renesas H8/300";
     case EM_H8_300H:		return "Renesas H8/300H";
@@ -3701,6 +3706,62 @@ decode_AMDGPU_machine_flags (Filedata *filedata, unsigned int e_flags,
     sprintf (buf, _(", unknown flags bits: %#x"), e_flags);
 }
 
+static void
+decode_tricore_machine_flags (unsigned int e_flags, char buf[], size_t size)
+{
+  unsigned long new_flags = 0;
+
+  /* convert old eflags to EABI conforming eflags */	
+  if (e_flags & 0xffff0000)
+    new_flags = e_flags;
+  else
+  {
+    int i;
+    for (i = 0; i < 16; i++)
+      {
+        if (e_flags & (1 << i))
+          new_flags |= 1 << (31-i);
+      }
+  }
+
+   --size; /* Leave space for null terminator.  */
+
+  switch (new_flags & EF_EABI_TRICORE_CORE_MASK)
+  {
+    case EF_EABI_TRICORE_V1_1:
+    case EF_TRICORE_V1_1:
+      strncat(buf, ", TC1.1", size);
+      break;
+    case EF_EABI_TRICORE_V1_2:
+    case EF_TRICORE_V1_2:
+      strncat(buf, ", TC1.2", size);
+      break;
+    case EF_EABI_TRICORE_V1_3:
+    case EF_TRICORE_V1_3:
+      strncat(buf, ", TC1.3", size);
+      break;
+    case EF_EABI_TRICORE_V1_3_1:
+    case EF_TRICORE_V1_3_1:
+      strncat(buf, ", TC1.3.1", size);
+      break;
+    case EF_EABI_TRICORE_V1_6:
+    case EF_TRICORE_V1_6:
+      strncat(buf, ", TC1.6", size);
+       break;
+    case EF_EABI_TRICORE_V1_6_1:
+    case EF_TRICORE_V1_6_1:
+      strncat(buf, ", TC1.6.1", size);
+      break;
+    case EF_EABI_TRICORE_V1_6_2:
+    case EF_TRICORE_V1_6_2:
+      strncat(buf, ", TC1.6.2", size);
+      break;
+    default:
+      strncat(buf, ", TC???", size);
+  }  
+
+}
+
 static char *
 get_machine_flags (Filedata * filedata, unsigned e_flags, unsigned e_machine)
 {
@@ -3726,6 +3787,10 @@ get_machine_flags (Filedata * filedata, unsigned e_flags, unsigned e_machine)
 
         case EM_AVR:
           decode_AVR_machine_flags (e_flags, buf, sizeof buf);
+          break;
+
+        case EM_TRICORE:
+          decode_tricore_machine_flags (e_flags, buf, sizeof buf);
           break;
 
 	case EM_BLACKFIN:
@@ -6861,6 +6926,9 @@ get_elf_section_flags (Filedata * filedata, uint64_t sh_flags)
       /* 25 */ { STRING_COMMA_LEN ("VLE") },
       /* GNU specific.  */
       /* 26 */ { STRING_COMMA_LEN ("GNU_RETAIN") },
+      /* Tricore specific.  */
+      /* TODO { STRING_COMMA_LEN ("PCP") }, */
+      /* 27 */ { STRING_COMMA_LEN ("SMALL") },
     };
 
   if (do_section_details)
@@ -6927,6 +6995,14 @@ get_elf_section_flags (Filedata * filedata, uint64_t sh_flags)
 		case EM_SPARC:
 		  if (flag == SHF_ORDERED)
 		    sindex = 19;
+		  break;
+
+		case EM_TRICORE:
+		  if (flag == SHF_TRICORE_SMALL)
+		    sindex = 27;
+		  /* TODO
+		  else if (flag == SHF_TRICORE_PCP)
+		    sindex = 28;*/
 		  break;
 
 		case EM_ARM:
@@ -7006,6 +7082,9 @@ get_elf_section_flags (Filedata * filedata, uint64_t sh_flags)
 	    case SHF_TLS:		*p = 'T'; break;
 	    case SHF_EXCLUDE:		*p = 'E'; break;
 	    case SHF_COMPRESSED:	*p = 'C'; break;
+	    /* TODO case SHF_TRICORE_PCP:	*p = 'p'; break; */
+	    case SHF_TRICORE_SMALL:	*p = 's'; break;
+	    case SHF_ABSOLUTE_DATA:	*p = 'z'; break;
 
 	    default:
 	      if ((filedata->file_header.e_machine == EM_X86_64
@@ -12940,6 +13019,31 @@ get_riscv_symbol_other (unsigned int other)
     return buf;
 }
 
+
+
+#define NUM_CORES    8
+
+static char *tricore_core_names[NUM_CORES] = {
+    "GLOBAL",
+    "CPU0",
+    "CPU1",
+    "CPU2",
+    "CPU3",
+    "CPU4",
+    "CPU5",
+    "CPU6"
+};
+
+static const char *
+get_tricore_symbol_other(unsigned int other)
+{
+  unsigned int core;
+  static char buffer[16]; 
+  core = ELF_STO_READ_CORE_NUMBER(other);
+  snprintf(buffer, sizeof buffer, "%s", tricore_core_names[core]);
+  return buffer;
+}
+
 static const char *
 get_symbol_other (Filedata * filedata, unsigned int other)
 {
@@ -12968,6 +13072,9 @@ get_symbol_other (Filedata * filedata, unsigned int other)
       break;
     case EM_RISCV:
       result = get_riscv_symbol_other (other);
+      break;
+    case EM_TRICORE:
+      result = get_tricore_symbol_other (other);
       break;
     default:
       result = NULL;
@@ -14457,6 +14564,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 2; /* R_TILEGX_32.  */
     case EM_TILEPRO:
       return reloc_type == 1; /* R_TILEPRO_32.  */
+    case EM_TRICORE:
+      return reloc_type == 2; /* R_TRICORE_32ABS */
     case EM_CYGNUS_V850:
     case EM_V850:
       return reloc_type == 6; /* R_V850_ABS32.  */
