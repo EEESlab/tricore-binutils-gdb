@@ -99,6 +99,8 @@ static void lang_do_version_exports_section (void);
 static void lang_finalize_version_expr_head
   (struct bfd_elf_version_expr_head *);
 static void lang_do_memory_regions (bool);
+static void lang_memory_set_current
+  (lang_memory_region_type *r, bfd_vma dot);
 
 /* Exported variables.  */
 const char *output_target;
@@ -1394,6 +1396,7 @@ lang_memory_region_lookup (const char *const name, bool create)
   new_region->last_os = NULL;
   new_region->flags = 0;
   new_region->not_flags = 0;
+  new_region->not_cores = 0;
   new_region->had_full_message = false;
 
   *lang_memory_region_list_tail = new_region;
@@ -1457,7 +1460,8 @@ lang_memory_default (asection *section)
   for (p = lang_memory_region_list; p != NULL; p = p->next)
     {
       if ((p->flags & sec_flags) != 0
-	  && (p->not_flags & sec_flags) == 0)
+	  && (p->not_flags & sec_flags) == 0
+	  && (p->not_cores & (1 << (SEC_TRICORE_CORE_GET (sec_flags) - 1))) == 0)
 	{
 	  return p;
 	}
@@ -1906,7 +1910,7 @@ lang_insert_orphan (asection *s,
 
   os_tail = (lang_output_section_statement_type **) lang_os_list.tail;
   os = lang_enter_output_section_statement (
-      secname, address, normal_section, 0, NULL, NULL, NULL, constraint, 0);
+      secname, address, normal_section, 0, NULL, NULL, NULL, constraint, 0, s->flags);
 
   if (add_child == NULL)
     add_child = &os->children;
@@ -2272,6 +2276,29 @@ lang_map_flags (flagword flag)
 
   if (flag & SEC_LOAD)
     minfo ("l");
+
+  if (flag & SEC_TRICORE_CORE_MASK)
+  {
+    char core_string[8];
+    sprintf(core_string, "c%d", SEC_TRICORE_CORE_GET(flag)-1);
+    minfo(core_string);
+  }
+}
+
+static void
+lang_map_negated_core_flags (unsigned char flags)
+{
+  unsigned char i;
+  char buf[3];
+
+  for (i = 0; i < 7; i++)
+  {
+    if (flags & (1 << i))
+    {
+      sprintf(buf, "c%d", i);
+      minfo(buf);
+    }
+  }
 }
 
 void
@@ -2327,6 +2354,13 @@ lang_map (void)
 	{
 	  minfo ("!");
 	  lang_map_flags (m->not_flags);
+	}
+
+      if (m->not_cores)
+	{
+	  if (! m->not_flags)
+	    minfo (" !");
+	  lang_map_negated_core_flags(m->not_cores);
 	}
 
       print_nl ();
@@ -2682,6 +2716,33 @@ lang_add_section (lang_statement_list_type *ptr,
   if (output->bfd_section == NULL)
     init_os (output, flags);
 
+  /* DEBUG
+  printf("[%s, %s] -> %x %x\n",  section->name, output->bfd_section->name,
+		  flags & SEC_TRICORE_CORE_MASK,
+                       output->flags & SEC_TRICORE_CORE_MASK);
+  
+
+  printf("CHECK = %d\n", (((output->bfd_section->flags & ~SEC_NEVER_LOAD) != 0)
+              && !(output->bfd_section->flags & SEC_DEBUGGING)));
+  */
+  if ((flags & SEC_TRICORE_CORE_MASK)||
+      (output->flags & SEC_TRICORE_CORE_MASK))
+        {
+          if ((flags & SEC_TRICORE_CORE_MASK) &&
+              (flags ^ output->flags) & SEC_TRICORE_CORE_MASK)
+            {
+              if (!strcmp(section->name, output->bfd_section->name))
+                einfo("info: %pB:\n input section"
+                    "'%pA' = '%f' not assigned to output section '%pA' ="
+                    "'%f'\n",
+                    section->owner,
+                    section,flags,
+                    output->bfd_section,
+                    output->flags);
+              return;
+            }
+	}
+
   /* If SEC_READONLY is not set in the input section, then clear
      it from the output section.  */
   output->bfd_section->flags &= flags | ~SEC_READONLY;
@@ -2715,6 +2776,18 @@ lang_add_section (lang_statement_list_type *ptr,
 				     &link_info);
       if ((flags & SEC_MERGE) != 0)
 	output->bfd_section->entsize = section->entsize;
+
+      /* If SEC_READONLY is not set in the input section, then clear
+	 it from the output section.  */
+      if ((section->flags & SEC_READONLY) == 0)
+	output->bfd_section->flags &= ~SEC_READONLY;
+
+      /* Copy over SEC_SMALL_DATA.  */
+      if (section->flags & SEC_SMALL_DATA)
+	output->bfd_section->flags |= SEC_SMALL_DATA;
+
+      // TOCHECKif (section->alignment_power > output->bfd_section->alignment_power)
+	//output->bfd_section->alignment_power = section->alignment_power;      
     }
 
   if ((flags & SEC_TIC54X_BLOCK) != 0
@@ -6059,7 +6132,8 @@ lang_size_sections_1
 	    if (os->region != NULL
 		&& (os->bfd_section->flags & (SEC_ALLOC | SEC_LOAD)))
 	      {
-		os->region->current = dot;
+		//os->region->current = dot;
+		lang_memory_set_current(os->region, dot);
 
 		if (check_regions)
 		  /* Make sure the new address is within the region.  */
@@ -6070,7 +6144,9 @@ lang_size_sections_1
 		    && ((os->bfd_section->flags & SEC_LOAD)
 			|| os->align_lma_with_input))
 		  {
-		    os->lma_region->current = os->bfd_section->lma + dotdelta;
+		    //os->lma_region->current = os->bfd_section->lma + dotdelta;
+		    lang_memory_set_current(os->lma_region,
+	              os->bfd_section->lma + dotdelta);
 
 		    if (check_regions)
 		      os_region_check (os, os->lma_region, NULL,
@@ -7407,8 +7483,11 @@ void
 lang_set_flags (lang_memory_region_type *ptr, const char *flags, int invert)
 {
   flagword *ptr_flags;
+  unsigned char *ptr_not_cores;
+  unsigned int core = 0;
 
   ptr_flags = invert ? &ptr->not_flags : &ptr->flags;
+  ptr_not_cores = &ptr->not_cores;
 
   while (*flags)
     {
@@ -7442,6 +7521,37 @@ lang_set_flags (lang_memory_region_type *ptr, const char *flags, int invert)
 	  *ptr_flags |= SEC_LOAD;
 	  break;
 
+	case 'P': case 'p' :
+          /* Compatibility with the PCP target, do nothing */
+        break;
+
+        case 'z':
+	  *ptr_flags |= SEC_TRICORE_ABSOLUTE_DATA;
+          break;
+
+	case 's':
+          *ptr_flags |= SEC_SMALL_DATA;
+          break;
+
+	case 'C': case 'c' :
+          flags++;
+          if (ISDIGIT(*flags))
+            core = *flags - '0';
+          else if (*flags != 'g')
+            {
+              einfo (_("%P%F: error: invalid syntax in flags = %s\n"), flags);
+              break;
+            }
+          else
+            break;
+          if (invert)
+            *ptr_not_cores |= 1 << core;
+          else if (*ptr_flags & SEC_TRICORE_CORE_MASK)
+            einfo (_("%P%F: multiple core definition in flags = %s\n"), flags);
+          else
+            *ptr_flags |= (core + 1) << SEC_TRICORE_CORE_SHIFT;
+          break;
+
 	default:
 	  einfo (_("%F%P: invalid character %c (%d) in flags\n"),
 		 *flags, *flags);
@@ -7450,6 +7560,87 @@ lang_set_flags (lang_memory_region_type *ptr, const char *flags, int invert)
       flags++;
     }
 }
+
+/* set section flags from linker script */
+flagword
+lang_set_section_flags (const char *flags)
+{
+  flagword sec_flags = SEC_READONLY;
+  const char *gf = flags;
+  unsigned int core = 0;
+  unsigned int core_set = 0;
+
+  if (flags == 0)
+	return 0;
+  while (*flags)
+   {
+     switch (*flags)
+      {
+      case 'A': case 'a' :
+        sec_flags |= SEC_ALLOC;
+        break;
+      case 'W': case 'w' :
+        sec_flags &= ~SEC_READONLY;
+        break;
+      case 'R': case 'r' :
+        sec_flags |= SEC_READONLY;
+        break;
+      case 'X': case 'x' :
+        sec_flags |= SEC_CODE;
+        break;
+      case 'P': case 'p' :
+	/* Compatibility with the PCP target, do nothing */
+        break;
+      case 'L': case 'l' :
+        sec_flags |= SEC_LOAD;
+        break;
+      case 's':
+        sec_flags |= SEC_SMALL_DATA;
+        break;
+      case 'z':
+        sec_flags |= SEC_TRICORE_ABSOLUTE_DATA;
+        break;
+      case 'C': case 'c' :
+        flags++;
+        if (ISDIGIT(*flags))
+          core = *flags - '0' + 1;
+        else if (*flags == 'g')
+          break;
+        else
+          {
+            einfo (_("%P%F: error: invalid syntax in flags = %s\n"),gf);
+            break;
+          }
+
+        if (sec_flags & SEC_TRICORE_CORE_MASK)
+          {
+            einfo (_("%P%F: multiple core definition in flags = %s\n"), gf);
+            break;
+          }
+        else
+          {
+            sec_flags |= (core) << SEC_TRICORE_CORE_SHIFT;
+            core_set = 1;
+          }
+        break;
+      
+      default:
+        einfo (_("%P%F: error: invalid syntax in flags %s\n"),gf);
+        break;
+      }
+     flags++;
+   }
+  if (core_set == 0)
+    {
+      core = lang_get_core_number();
+      if (core)
+        {
+          sec_flags |= (core) << SEC_TRICORE_CORE_SHIFT;
+        }
+    }
+  return sec_flags;
+}
+
 
 /* Call a function on each real input file.  This function will be
    called on an archive, but not on the elements.  */
@@ -7529,7 +7720,8 @@ lang_enter_output_section_statement (const char *output_section_statement_name,
 				     etree_type *subalign,
 				     etree_type *ebase,
 				     int constraint,
-				     int align_with_input)
+				     int align_with_input,
+				     flagword flags)
 {
   lang_output_section_statement_type *os;
 
@@ -7548,6 +7740,7 @@ lang_enter_output_section_statement (const char *output_section_statement_name,
     os->flags = SEC_NEVER_LOAD;
   else
     os->flags = SEC_NO_FLAGS;
+  os->flags |= flags;
   os->block_value = 1;
 
   /* Make next things chain into subchain of this.  */
@@ -9035,7 +9228,7 @@ lang_enter_overlay_section (const char *name)
   etree_type *size;
 
   lang_enter_output_section_statement (name, overlay_vma, overlay_section,
-				       0, 0, overlay_subalign, 0, 0, 0);
+				       0, 0, overlay_subalign, 0, 0, 0, 0);
 
   /* If this is the first section, then base the VMA of future
      sections on this one.  This will work correctly even if `.' is
@@ -9736,6 +9929,131 @@ lang_add_unique (const char *name)
   ent->name = xstrdup (name);
   ent->next = unique_section_list;
   unique_section_list = ent;
+}
+
+void 
+lang_add_memory_region_map(const char *core, bfd_vma origin, bfd_size_type length, bfd_vma altorigin)
+{
+  unsigned int coreid;
+  coreid = ldemul_get_core_number_from_name(core);
+  ldemul_add_memory_map(coreid,origin,length,altorigin);
+}
+
+unsigned int 
+lang_get_core_number(void)
+{
+  return ldemul_get_core_number();
+}
+void
+lang_set_core_number(const char *core)
+{
+  unsigned int coreid;
+  coreid = ldemul_get_core_number_from_name(core);
+  ldemul_set_core_number(coreid);
+}
+
+const char *
+lang_get_core_name(void)
+{
+  return ldemul_get_core_name();
+}
+
+
+void lang_set_core_alias (const char *alias, const char *name)
+{
+  return ldemul_set_core_alias(alias,name);
+}
+void lang_define_sda_section (const char *sec,const char *sym,const char *reg)
+{
+  ldemul_define_sda_section (sec,sym,reg);
+}
+
+/* handle memory groups 
+   memory which describe the same physical memory
+   */
+static lang_memory_region_mirror *new_region_mirror;
+void
+lang_enter_region_mirror (void)
+{
+  new_region_mirror = stat_alloc (sizeof (lang_memory_region_mirror));
+  new_region_mirror->region = NULL;
+  new_region_mirror->next = NULL;
+}
+
+void
+lang_leave_region_mirror (void)
+{
+  lang_memory_region_mirror_list *l;
+  lang_memory_region_mirror *g;
+
+  if (new_region_mirror == NULL)
+    return;
+
+  for (g = new_region_mirror; g; g = g->next)
+    {
+      l = stat_alloc (sizeof (lang_memory_region_mirror_list));
+      l->mirror = new_region_mirror;
+      l->next = g->region->mirror;
+      g->region->mirror = l;
+    }
+}
+
+void
+lang_add_to_region_mirror (const char *name)
+{
+  lang_memory_region_name *n;
+  lang_memory_region_type *r;
+  lang_memory_region_mirror *g;
+  if (new_region_mirror == NULL)
+    {
+      einfo (_("%P:%S: warning: illegal MEM_GROUP Statement for '%s'\n"), name);
+      return;
+    }
+  r = lang_memory_region_lookup(name, false);
+
+  if (new_region_mirror->region == NULL)
+    new_region_mirror->region = r;
+  else
+    {
+      for (g = new_region_mirror; g->next; g = g->next) 
+        {
+          for (n = &g->region->name_list; n != NULL; n = n->next)
+            {
+              /* already in group */
+              if (strcmp (n->name, name) == 0)
+                return;
+            }
+        }
+
+      g->next = stat_alloc (sizeof (lang_memory_region_mirror));
+      g = g->next;
+      g->next = NULL;
+      g->region = r;
+    }
+}
+
+/* set the current dot for each region in the group list */
+static void
+lang_memory_set_current(lang_memory_region_type *r, bfd_vma dot)
+{
+  lang_memory_region_mirror_list *l;
+  lang_memory_region_mirror *gr;
+  bfd_vma offset;
+
+  r->current = dot;
+  offset = dot - r->origin;
+  for (l = r->mirror; l; l = l->next)
+    {
+      for (gr = l->mirror; gr; gr = gr->next)
+        {
+          /* do not set backward
+             if one region is in multiple groups the DOT may have been
+             increased due to an allocation in one of the other regions
+             */
+          if (gr->region->current < (offset + gr->region->origin) )
+            gr->region->current = offset + gr->region->origin;
+        }
+    }
 }
 
 /* Append the list of dynamic symbols to the existing one.  */

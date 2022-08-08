@@ -36,6 +36,7 @@
 #include "ldmain.h"
 #include "libiberty.h"
 
+
 /* The type of top-level parser input.
    yylex and yyparse (indirectly) both check this.  */
 input_type parser_input;
@@ -345,6 +346,14 @@ V_IDENTIFIER [*?.$_a-zA-Z\[\]\-\!\^\\]([*?.$_a-zA-Z0-9\[\]\-\!\^\\]|::)*
 <WILD>"KEEP"				{ RTOKEN(KEEP); }
 <WILD>"EXCLUDE_FILE"			{ RTOKEN(EXCLUDE_FILE); }
 <SCRIPT,EXPRESSION>"CONSTANT"		{ RTOKEN(CONSTANT);}
+<SCRIPT>"REGION_MAP"			{ RTOKEN(REGION_MAP_K);}
+<SCRIPT>"CORE_ALIAS"			{ RTOKEN(COREALIAS_K);}
+<SCRIPT>"REGION_MIRROR"			{ RTOKEN(REGION_MIRROR);}
+<SCRIPT,EXPRESSION>"SDA_SECTION"	{ RTOKEN(SDA_SECTION_K);}
+<SCRIPT,EXPRESSION>"CORE_ID"		{ RTOKEN(COREID_K);}
+<SCRIPT,EXPRESSION>"CORE_SEC"		{ RTOKEN(CORE_K);}
+<SCRIPT,EXPRESSION>"CORE_SYM"           { RTOKEN(CORESYM_K);}
+<SCRIPT,EXPRESSION>"FLAGS"		{ RTOKEN(FLAGS);}
 
 <MRI>"#".*\n?			{ ++ lineno; }
 <MRI>"\n"			{ ++ lineno;  RTOKEN(NEWLINE); }
@@ -426,6 +435,8 @@ V_IDENTIFIER [*?.$_a-zA-Z\[\]\-\!\^\\]([*?.$_a-zA-Z0-9\[\]\-\!\^\\]|::)*
 		    yyless (2);
 		    comment ();
 		  }
+                else if (strncmp (yytext, "CORE_SYM", 8) == 0)
+		    return CORESYM_K;
 		else
 		  {
 		    yylval.name = xstrdup (yytext);

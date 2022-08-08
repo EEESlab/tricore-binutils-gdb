@@ -443,3 +443,79 @@ ldemul_print_symbol (struct bfd_link_hash_entry *hash_entry, void *ptr)
     return ld_emulation->print_symbol (hash_entry, ptr);
   return print_one_symbol (hash_entry, ptr);
 }
+
+  /* get the actual core number */
+unsigned int ldemul_get_core_number(void)
+{
+  unsigned int core_number = 0;
+  if (ld_emulation->get_core_number)
+    core_number = (*ld_emulation->get_core_number)();
+  return core_number;
+}
+  /* set the actual core number */
+void ldemul_set_core_number(unsigned int core)
+{
+  if (ld_emulation->set_core_number)
+    (*ld_emulation->set_core_number)(core);
+  else
+    einfo(_("warning: Core numbers not supported"));
+  return;
+}
+  /* get core number from name */
+unsigned int ldemul_get_core_number_from_name(const char *core)
+{
+  if (ld_emulation->get_core_number_from_name)
+    return (*ld_emulation->get_core_number_from_name)(core);
+  else
+    einfo(_("warning: Core numbers not supported"));
+  return 0;
+}
+
+  /* get core number from name */
+const char *ldemul_get_core_name(void)
+{
+  if (ld_emulation->get_core_name)
+    return (*ld_emulation->get_core_name)();
+  else
+    einfo(_("warning: Core numbers not supported"));
+  return "";
+}
+  /* set an alias for a core name */
+  /* set an alias for a core name */
+void ldemul_set_core_alias(const char *alias,const char *core)
+{
+  if (ld_emulation->set_core_alias)
+    (*ld_emulation->set_core_alias)(alias,core);
+  else
+    einfo(_("warning: Core numbers not supported"));
+  return;
+}
+void ldemul_define_sda_section (const char *sec,const char *sym,const char *reg)
+{
+  if (ld_emulation->define_sda_section)
+    (*ld_emulation->define_sda_section)(&link_info,link_info.output_bfd,sec,sym,reg);
+  else
+    einfo(_("warning: Defining of SDA sections not supported"));
+  return;
+}
+
+  /* handle export and renaming of global symbols */
+void ldemul_add_exported_symbol (const char *name, bool type,
+		bfd_size_type size, const char *export_name)
+{
+  if (ld_emulation->add_exported_symbol)
+    (*ld_emulation->add_exported_symbol)(name,type,size,export_name);
+  else
+    einfo (_("warning: exporting of symbols not supported for this architecture\n"));
+
+}
+  /* handle memory region mapping */
+void ldemul_add_memory_map
+   (unsigned int core, bfd_vma origin, bfd_size_type length,
+    bfd_vma alt_origin)
+{
+  if (ld_emulation->add_memory_map)
+    (*ld_emulation->add_memory_map)(core,origin,length,alt_origin);
+  else
+    einfo (_("warning: Memory mapping not support for this architecture\n"));
+}

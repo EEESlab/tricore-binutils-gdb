@@ -65,8 +65,22 @@ typedef struct memory_region_struct
   union lang_statement_union *last_os;
   flagword flags;
   flagword not_flags;
+  unsigned char not_cores;
   bool had_full_message;
+  struct memory_region_mirror_list *mirror;  
 } lang_memory_region_type;
+
+typedef struct memory_region_mirror_struct
+{
+  struct memory_region_struct *region;
+  struct memory_region_mirror_struct * next;
+} lang_memory_region_mirror;
+
+typedef struct memory_region_mirror_list
+{
+  struct memory_region_mirror_list *next;
+  struct memory_region_mirror_struct *mirror;
+} lang_memory_region_mirror_list;
 
 enum statement_enum
 {
@@ -561,7 +575,7 @@ extern void lang_add_output
   (const char *, int from_script);
 extern lang_output_section_statement_type *lang_enter_output_section_statement
   (const char *, etree_type *, enum section_type, etree_type *, etree_type *,
-   etree_type *, etree_type *, int, int);
+   etree_type *, etree_type *, int, int, flagword);
 extern void lang_final
   (void);
 extern void lang_relax_sections
@@ -740,4 +754,17 @@ print_one_symbol (struct bfd_link_hash_entry *, void *);
 
 extern void lang_add_version_string
   (void);
+
+extern flagword lang_set_section_flags (const char *);
+extern void lang_add_memory_region_map
+  (const char *, bfd_vma , bfd_size_type , bfd_vma );
+extern unsigned int lang_get_core_number (void);
+extern const char * lang_get_core_name (void);
+extern void lang_set_core_number (const char *);
+extern void lang_set_core_alias (const char *, const char *);
+extern int lang_check_core_name (const char *);
+extern void lang_define_sda_section (const char *,const char *,const char *);
+extern void lang_enter_region_mirror (void);
+extern void lang_leave_region_mirror (void);
+extern void lang_add_to_region_mirror (const char *);
 #endif

@@ -118,6 +118,23 @@ extern void ldemul_new_dynsym_for_ctf
 
 extern bool ldemul_print_symbol
   (struct bfd_link_hash_entry *hash_entry, void *ptr);
+/* get the actual core number */
+extern  unsigned int ldemul_get_core_number (void);
+/* set the actual core number */
+extern  void ldemul_set_core_number (unsigned int);
+/* handle export and renaming of global symbols */
+extern void ldemul_add_exported_symbol
+  (const char *, bool, bfd_size_type, const char *);
+/* handle memory region mapping */
+extern void ldemul_add_memory_map
+  (unsigned int, bfd_vma, bfd_size_type, bfd_vma);
+/* get core number from name */
+extern unsigned int ldemul_get_core_number_from_name (const char *);
+/* set an alias for a core name */
+extern void ldemul_set_core_alias (const char *, const char *);
+/* get the core name */
+extern const char * ldemul_get_core_name (void);
+extern void ldemul_define_sda_section (const char *, const char *, const char *);
 
 typedef struct ld_emulation_xfer_struct {
   /* Run before parsing the command line and script file.
@@ -258,7 +275,26 @@ typedef struct ld_emulation_xfer_struct {
      hook to flag gc'd symbols.  */
   bool (*print_symbol)
     (struct bfd_link_hash_entry *hash_entry, void *ptr);
-
+  
+    /* get the actual core number */
+  unsigned int (*get_core_number) (void);
+  /* set the actual core number */
+  void (*set_core_number) (unsigned int);
+  /* handle export and renaming of global symbols */
+  void (*add_exported_symbol)
+    (const char *, bool, bfd_size_type, const char *);
+  /* handle memory region mapping */
+  void (*add_memory_map)
+    (unsigned int, bfd_vma, bfd_size_type, bfd_vma);
+  /* get core number form name */
+  unsigned int (*get_core_number_from_name) (const char *);
+  /* set an alias for a core */
+  void (*set_core_alias) (const char *, const char *);
+  /* get the name of the actual handled core */
+  const char * (*get_core_name) (void);
+  /* define a section as a SDA section with base symbol and base register */
+  void (*define_sda_section) (struct bfd_link_info *, bfd *,
+                              const char *, const char *, const char *);
 } ld_emulation_xfer_type;
 
 typedef enum {

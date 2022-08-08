@@ -41,6 +41,7 @@
 #include "mri.h"
 #include "ldctor.h"
 #include "ldlex.h"
+#include "libiberty.h"
 
 #ifndef YYDEBUG
 #define YYDEBUG 1
@@ -49,6 +50,7 @@
 static enum section_type sectype;
 static etree_type *sectype_value;
 static lang_memory_region_type *region;
+static flagword os_flags;
 
 static bool ldgram_had_keep = false;
 static char *ldgram_vers_current_lang = NULL;
@@ -107,6 +109,17 @@ static int error_index;
 %type <nocrossref> nocrossref_list
 %type <section_phdr> phdr_opt
 %type <integer> opt_nocrossrefs
+%type <name> opt_flags
+%type <name> sec_name
+%type <name> sym_name
+%token FLAGS
+%token CORE_K
+%token COREID_K
+%token CORESYM_K
+%token COREALIAS_K
+%token REGION_MAP_K
+%token REGION_MIRROR
+%token SDA_SECTION_K
 
 %right <token> PLUSEQ MINUSEQ MULTEQ DIVEQ  '=' LSHIFTEQ RSHIFTEQ   ANDEQ OREQ
 %right <token> '?' ':'
@@ -177,11 +190,26 @@ file:
 filename:  NAME;
 
 
+sym_name:
+		CORESYM_K '(' NAME ')'
+		{
+		  const char *core_name;
+		  core_name = lang_get_core_name();
+		  if (lang_get_core_name())
+		    $$ = concat($3, "_", core_name, "_", NULL);
+		  else
+		    $$ = $3;
+		}
+	|	NAME
+		{ $$ = $1; }
+	;
+
 defsym_expr:
 		{ ldlex_expression(); }
 		assignment
 		{ ldlex_popstate(); }
 	;
+
 
 /* SYNTAX WITHIN AN MRI SCRIPT FILE */
 mri_script_file:
@@ -361,7 +389,29 @@ ifile_p1:
 		{ lang_memory_region_alias ($3, $5); }
 	|	LD_FEATURE '(' NAME ')'
 		{ lang_ld_feature ($3); }
+	|	REGION_MAP_K '(' NAME ',' mustbe_exp ',' mustbe_exp ',' mustbe_exp ')'
+		{ lang_add_memory_region_map (
+		    $3,
+		    exp_get_vma ($5, 0, "region origin"),
+		    exp_get_vma ($7, 0, "region length"),
+		    exp_get_vma ($9, 0, "alternate origin")
+		  );
+		}
+	|	COREID_K '=' NAME
+		{ lang_set_core_number($3); }
+	|	COREALIAS_K '(' NAME '=' NAME ')'
+		{ lang_set_core_alias ($3, $5); }
+	|	REGION_MIRROR
+		{ lang_enter_region_mirror (); }
+		'(' region_mirror_list ')'
+		{ lang_leave_region_mirror (); }
 	;
+
+region_mirror_list:
+		NAME
+		{ lang_add_to_region_mirror($1); }
+	| region_mirror_list opt_comma NAME 
+		{ lang_add_to_region_mirror($3); }
 
 input_list:
 		{ ldlex_inputlist(); }
@@ -411,6 +461,7 @@ sections:
 sec_or_group_p1:
 		sec_or_group_p1 section
 	|	sec_or_group_p1 statement_anywhere
+	|	sec_or_group_p1 statement_sda_section
 	|
 	;
 
@@ -423,8 +474,17 @@ statement_anywhere:
 		  lang_add_assignment (exp_assert ($4, $6)); }
 	;
 
+statement_sda_section:
+		SDA_SECTION_K '(' sec_name ',' sym_name ',' NAME ')'
+	 	{ lang_define_sda_section ($3, $5, $7 ); }
+        ;
+
 wildcard_name:
 		NAME
+			{
+			  $$ = $1;
+			}
+	|	sec_name
 			{
 			  $$ = $1;
 			}
@@ -755,11 +815,11 @@ separator:	';' | ','
 
 
 assignment:
-		NAME '=' mustbe_exp
+		sym_name '=' mustbe_exp
 		{
 		  lang_add_assignment (exp_assign ($1, $3, false));
 		}
-	|	NAME assign_op mustbe_exp
+	|	sym_name assign_op mustbe_exp
 		{
 		  lang_add_assignment (exp_assign ($1,
 						   exp_binop ($2,
@@ -767,15 +827,15 @@ assignment:
 									  $1),
 							      $3), false));
 		}
-	|	HIDDEN '(' NAME '=' mustbe_exp ')'
+	|	HIDDEN '(' sym_name '=' mustbe_exp ')'
 		{
 		  lang_add_assignment (exp_assign ($3, $5, true));
 		}
-	|	PROVIDE '(' NAME '=' mustbe_exp ')'
+	|	PROVIDE '(' sym_name '=' mustbe_exp ')'
 		{
 		  lang_add_assignment (exp_provide ($3, $5, false));
 		}
-	|	PROVIDE_HIDDEN '(' NAME '=' mustbe_exp ')'
+	|	PROVIDE_HIDDEN '(' sym_name '=' mustbe_exp ')'
 		{
 		  lang_add_assignment (exp_provide ($3, $5, true));
 		}
@@ -906,7 +966,7 @@ nocrossref_list:
 	;
 
 paren_script_name:	{ ldlex_script (); }
-		'(' NAME ')'
+		'(' sec_name ')'
 			{ ldlex_popstate (); $$ = $3; }
 
 mustbe_exp:		{ ldlex_expression (); }
@@ -966,7 +1026,7 @@ exp	:
 			{ $$ = exp_binop (ANDAND , $1, $3); }
 	|	exp OROR exp
 			{ $$ = exp_binop (OROR , $1, $3); }
-	|	DEFINED '(' NAME ')'
+	|	DEFINED '(' sym_name')'
 			{ $$ = exp_nameop (DEFINED, $3); }
 	|	INT
 			{ $$ = exp_bigintop ($1.integer, $1.str); }
@@ -1007,7 +1067,7 @@ exp	:
 					  exp_nameop (NAME, $4)); }
 	|	BLOCK '(' exp ')'
 			{ $$ = exp_unop (ALIGN_K,$3); }
-	|	NAME
+	|	sym_name
 			{ $$ = exp_nameop (NAME,$1); }
 	|	MAX_K '(' exp ',' exp ')'
 			{ $$ = exp_binop (MAX_K, $3, $5 ); }
@@ -1025,7 +1085,7 @@ exp	:
 
 
 memspec_at_opt:
-		AT '>' NAME { $$ = $3; }
+		AT '>' sym_name { $$ = $3; }
 	|	{ $$ = 0; }
 	;
 
@@ -1056,7 +1116,24 @@ sect_constraint:
 	|	{ $$ = 0; }
 	;
 
-section:	NAME
+opt_flags:
+		FLAGS '(' NAME ')' { os_flags = lang_set_section_flags($3); }
+	|	{ os_flags = 0; }
+	;
+
+sec_name:
+		CORE_K '(' NAME ')' {
+		  const char * core_name;
+		  core_name = lang_get_core_name();
+		  if (core_name)
+		    $$ = concat(".",core_name,$3,NULL);
+		  else
+		    $$ = $3;
+		}
+	|	NAME { $$=$1; }
+	;
+
+section:	sec_name
 			{ ldlex_expression(); }
 		opt_exp_with_type
 		opt_at
@@ -1064,12 +1141,15 @@ section:	NAME
 		opt_align_with_input
 		opt_subalign
 		sect_constraint
+		opt_flags
 			{
 			  ldlex_popstate ();
 			  ldlex_wild ();
 			  lang_enter_output_section_statement ($1, $3, sectype,
-					sectype_value, $5, $7, $4, $8, $6);
+					sectype_value, $5, $7, $4, $8, $6,
+					os_flags);
 			}
+
 		'{'
 		statement_list_opt
 		'}'
@@ -1088,8 +1168,8 @@ section:	NAME
 			      yyclearin;
 			      ldlex_backup ();
 			    }
-			  lang_leave_output_section_statement ($17, $14,
-							       $16, $15);
+			  lang_leave_output_section_statement ($18, $15,
+							       $17, $16);
 			}
 		opt_comma
 	|	OVERLAY
@@ -1174,7 +1254,7 @@ opt_nocrossrefs:
 	;
 
 memspec_opt:
-		'>' NAME
+		'>' sym_name
 		{ $$ = $2; }
 	|	{ $$ = DEFAULT_MEMORY_REGION; }
 	;
@@ -1305,6 +1385,11 @@ phdr_qualifiers:
 		  else
 		    einfo (_("%X%P:%pS: PHDRS syntax error at `%s'\n"),
 			   NULL, $1);
+		}
+	|	FLAGS '(' exp ')' phdr_qualifiers
+		{
+		  $$ = $5;
+		  $$.flags = $3;
 		}
 	|	AT '(' exp ')' phdr_qualifiers
 		{

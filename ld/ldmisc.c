@@ -80,6 +80,7 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
     int i;
     long l;
     void *p;
+    flagword f;
     bfd_vma v;
     struct {
       bfd *abfd;
@@ -93,9 +94,10 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	Long,
 	Ptr,
 	Vma,
-	RelAddr
+	RelAddr,
+	Flagword
       } type;
-  } args[9];
+  } args[10];
 
   if (is_warning && config.no_warnings)
     return;
@@ -158,6 +160,10 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	      arg_type = Int;
 	      break;
 
+	    case 'f':
+	      arg_type = Flagword;
+              break;
+
 	    case 'l':
 	      if (*scan == 'd' || *scan == 'u' || *scan == 'x')
 		{
@@ -200,6 +206,9 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	  args[arg_no].reladdr.sec = va_arg (ap, asection *);
 	  args[arg_no].reladdr.off = va_arg (ap, bfd_vma);
 	  break;
+	case Flagword:
+	  args[arg_no].f = va_arg (ap, flagword);
+          break;
 	default:
 	  abort ();
 	}
@@ -539,6 +548,32 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	      /* integer, like printf */
 	      fprintf (fp, "%d", args[arg_no].i);
 	      ++arg_count;
+	      break;
+
+             case 'f':
+              /* output section flags */
+	      {
+                flagword flags = (flagword) args[arg_no].f;
+                if (flags & SEC_ALLOC)
+                  fprintf(fp, "a");
+                if (flags & SEC_CODE)
+                  fprintf(fp, "x");
+                if (!(flags & SEC_READONLY))
+                  fprintf(fp, "w");
+        	 /* TODO
+                if (flags & SEC_PCP)
+                   fprintf(fp, "p");
+		    */
+                if (flags & SEC_TRICORE_ABSOLUTE_DATA)
+                  fprintf(fp, "z");
+                if (flags & SEC_SMALL_DATA)
+                  fprintf(fp, "s");
+                if (flags & SEC_LOAD)
+                  fprintf(fp, "l");
+                if (flags & SEC_TRICORE_CORE_MASK)
+                  fprintf(fp, "c%d", SEC_TRICORE_CORE_GET(flags) - 1);
+                ++arg_count;
+	      }
 	      break;
 
 	    case 'u':
