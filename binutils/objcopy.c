@@ -310,6 +310,14 @@ enum command_line_switch
   OPTION_ADD_GNU_DEBUGLINK,
   OPTION_ADD_SYMBOL,
   OPTION_ALT_MACH_CODE,
+#ifndef WITHOUT_FEATURE_HDP_934
+  OPTION_CARRAY_OTYP,
+  OPTION_CARRAY_OLBL,
+  OPTION_CARRAY_ODEF,
+  OPTION_CARRAY_COMMENTS,
+  OPTION_CARRAY_HINC,
+  OPTION_CARRAY_XTERN,
+#endif /* without feature: HDP-934 */
   OPTION_CHANGE_ADDRESSES,
   OPTION_CHANGE_LEADING_CHAR,
   OPTION_CHANGE_SECTION_ADDRESS,
@@ -523,6 +531,28 @@ static struct option copy_options[] =
   {0, no_argument, 0, 0}
 };
 
+#ifndef WITHOUT_FEATURE_HDP_934
+/* Specifies the array type name to use when the output format is carray.  */
+static const char * carray_output_type = NULL;
+
+/* C array output label (identifier) specified by the command line option
+   --olbl=<label>.  */
+static const char * carray_output_label = NULL;
+
+/* Definition header file name to create specified by the command line
+   option --odef=<filename> when the output format is carray.  */
+static const char * carray_odef_filename = NULL;
+
+/* Add comments in C array output.  */
+static bool carray_comments = false;
+
+/* True if --hinc was passed on the command line.  */
+static bool carray_header_include = false;
+
+/* True if --xtern was passed on the command line.  */
+static bool carray_header_extern = false;
+#endif /* without feature: HDP-934 */
+
 /* IMPORTS */
 extern char *program_name;
 
@@ -561,6 +591,11 @@ static void mark_symbols_used_in_relocations (bfd *, asection *, void *);
 static bool write_debugging_info (bfd *, void *, long *, asymbol ***);
 static const char *lookup_sym_redefinition (const char *);
 static const char *find_section_rename (const char *, flagword *);
+#ifndef WITHOUT_FEATURE_HDP_934
+extern bool carray_set_odef (bfd *, bfd *, bool, bool);
+extern bool carray_set_variable (bfd *, const char *, const char *);
+extern bool carray_add_comments (bfd *, bool);
+#endif /* without feature: HDP-934 */
 
 ATTRIBUTE_NORETURN static void
 copy_usage (FILE *stream, int exit_status)
@@ -695,8 +730,25 @@ copy_usage (FILE *stream, int exit_status)
   @<file>                          Read options from <file>\n\
   -V --version                     Display this program's version number\n\
   -h --help                        Display this output\n\
-     --info                        List object formats & architectures supported\n\
-"));
+     --info                        List object formats & architectures supported\n"
+#ifndef WITHOUT_FEATURE_HDP_934
+  "\
+Options available when output target is <carray>:\n\
+     --otyp <type>                 Define output type <type> with optional qualifiers for\n\
+                                   C array (default is 'unsigned long')\n\
+     --olbl <label>                Use output label <label> as memory initialization\n\
+                                   variable in generated C array file (default is 'carray_mem')\n\
+     --odef <dfile>                Generate an additional file named <dfile> that contains\n\
+                                   symbolic definitions about labels used in the [in-file]\n\
+     --comments                    Add comments in generated C array file\n\
+                                   (default is no comments added)\n\
+     --hinc                        Add include statement for C header <dfile> into [out-file]\n\
+                                   (default is no include statement)\n\
+     --xtern                       Add extern statement for C array definition into <dfile>\n\
+                                   (default is no extern statement)\n"
+#endif /* without feature: HDP-934 */
+     
+));
   list_supported_targets (program_name, stream);
   if (REPORT_BUGS_TO[0] && exit_status == 0)
     fprintf (stream, _("Report bugs to %s\n"), REPORT_BUGS_TO);
@@ -2654,6 +2706,9 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
   enum bfd_architecture iarch;
   unsigned int imach;
   unsigned int num_sec, i;
+#ifndef WITHOUT_FEATURE_HDP_934
+  extern const bfd_target carray_vec;
+#endif
 
   if (ibfd->xvec->byteorder != obfd->xvec->byteorder
       && ibfd->xvec->byteorder != BFD_ENDIAN_UNKNOWN
@@ -2689,6 +2744,42 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
   /* This is a no-op on non-Coff targets.  */
   set_long_section_mode (obfd, ibfd, long_section_names);
 
+#ifndef WITHOUT_FEATURE_HDP_934
+  if (obfd->xvec == &carray_vec)
+    {
+      if (! carray_set_variable (obfd,
+                                 carray_output_type,
+                                 carray_output_label))
+        {
+          bfd_nonfatal_message (NULL, obfd, NULL, NULL);
+          return false;
+        }
+
+      if (carray_odef_filename != NULL)
+        {
+          const char *output_target = bfd_get_target (obfd);
+          bfd *odef_obfd = bfd_openw (carray_odef_filename, output_target);
+
+          if (odef_obfd == NULL)
+            {
+              bfd_nonfatal_message (carray_odef_filename, NULL, NULL, NULL);
+              return false;
+            }
+
+          if (! carray_set_odef (obfd,
+                                 odef_obfd,
+                                 carray_header_include,
+                                 carray_header_extern))
+            {
+              bfd_nonfatal_message (NULL, obfd, NULL, NULL);
+              return false;
+            }
+        }
+
+      carray_add_comments (obfd, carray_comments);
+    }
+#endif /* without feature: HDP-934 */
+  
   /* Set the Verilog output endianness based upon the input file's
      endianness.  We may not be producing verilog format output,
      but testing this just adds extra code this is not really
@@ -5887,6 +5978,32 @@ copy_main (int argc, char *argv[])
 	      }
 	  }
 	  break;
+
+#ifndef WITHOUT_FEATURE_HDP_934
+        case OPTION_CARRAY_OTYP:
+          carray_output_type = optarg;
+          break;
+
+        case OPTION_CARRAY_OLBL:
+          carray_output_label = optarg;
+          break;
+
+        case OPTION_CARRAY_ODEF:
+          carray_odef_filename = optarg;
+          break;
+
+        case OPTION_CARRAY_COMMENTS:
+          carray_comments = true;
+          break;
+
+        case OPTION_CARRAY_HINC:
+          carray_header_include = true;
+          break;
+
+        case OPTION_CARRAY_XTERN:
+          carray_header_extern = true;
+          break;
+#endif /* without feature: HDP-934 */
 
 	case OPTION_VERILOG_DATA_WIDTH:
 	  VerilogDataWidth = parse_vma (optarg, "--verilog-data-width");

@@ -15,6 +15,7 @@ bfdio.c
 bfdwin.c
 binary.c
 cache.c
+carray.c
 cf-i386lynx.c
 cisco-core.c
 coff-alpha.c
