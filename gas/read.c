@@ -4105,8 +4105,8 @@ do_parse_cons_expression (expressionS *exp,
 
 static void
 cons_worker (int nbytes,	/* 1=.byte, 2=.word, 4=.long.  */
-	     int rva)
-{
+	     int rva,
+             int align) {
   int c;
   expressionS exp;
   char *stop = NULL;
@@ -4131,7 +4131,10 @@ cons_worker (int nbytes,	/* 1=.byte, 2=.word, 4=.long.  */
     nbytes = TC_ADDRESS_BYTES ();
 
 #ifdef md_cons_align
-  md_cons_align (nbytes);
+  if (align && ((1 << align) > nbytes)) 
+    md_cons_align(1 << align);
+  else
+    md_cons_align (nbytes);
 #endif
 
   c = 0;
@@ -4174,6 +4177,11 @@ cons_worker (int nbytes,	/* 1=.byte, 2=.word, 4=.long.  */
       TC_CONS_FIX_CHECK (&exp, nbytes, *cur_fix);
 #endif
       ++c;
+      if (align && ((1 << align) != nbytes))
+        {
+          /* fill up to next aligned address */
+          do_align(align, 0,0,0);
+        }
     }
   while (*input_line_pointer++ == ',');
 
@@ -4194,13 +4202,27 @@ cons_worker (int nbytes,	/* 1=.byte, 2=.word, 4=.long.  */
 void
 cons (int size)
 {
-  cons_worker (size, 0);
+  cons_worker (size, 0, 0);
+}
+
+/* emit 24-bit , 32-bit aligned */
+extern void s_lit24(int size);
+void s_lit24(int size)
+{
+  cons_worker(size, 0, 2);
+}
+
+/* emit 24-bit unaligned */
+extern void s_ulit24(int size);
+void s_ulit24(int size)
+{
+  cons_worker(size, 0, 0);
 }
 
 void
 s_rva (int size)
 {
-  cons_worker (size, 1);
+  cons_worker (size, 1, 0);
 }
 
 /* .reloc offset, reloc_name, symbol+addend.  */

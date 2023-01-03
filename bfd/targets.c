@@ -795,6 +795,7 @@ extern const bfd_target mcore_pe_be_vec;
 extern const bfd_target mcore_pe_le_vec;
 extern const bfd_target mcore_pei_be_vec;
 extern const bfd_target mcore_pei_le_vec;
+extern const bfd_target mcs_elf32_vec;
 extern const bfd_target mep_elf32_vec;
 extern const bfd_target mep_elf32_le_vec;
 extern const bfd_target metag_elf32_vec;
@@ -1158,6 +1159,8 @@ static const bfd_target * const _bfd_target_vector[] =
 	&mcore_pe_le_vec,
 	&mcore_pei_be_vec,
 	&mcore_pei_le_vec,
+
+	&mcs_elf32_vec,
 
 	&mep_elf32_vec,
 

@@ -2782,6 +2782,7 @@ get_machine_name (unsigned e_machine)
     case EM_SH:			return "Renesas / SuperH SH";
     case EM_SPARCV9:		return "Sparc v9";
     case EM_TRICORE:		return "Infineon Tricore";
+    case EM_GTM_MCS:		return "RB GTM MCS";				
     case EM_ARC:		return "ARC";
     case EM_H8_300:		return "Renesas H8/300";
     case EM_H8_300H:		return "Renesas H8/300H";
@@ -14566,6 +14567,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 1; /* R_TILEPRO_32.  */
     case EM_TRICORE:
       return reloc_type == 2; /* R_TRICORE_32ABS */
+    case EM_GTM_MCS:
+      return reloc_type == 8; /* R_MCS_32 */
     case EM_CYGNUS_V850:
     case EM_V850:
       return reloc_type == 6; /* R_V850_ABS32.  */
@@ -14778,6 +14781,8 @@ is_24bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 5; /* R_FT32_20.  */
     case EM_Z80:
       return reloc_type == 5; /* R_Z80_24. */
+    case EM_GTM_MCS:
+      return reloc_type == 7; /* R_MCS_24 */      
     default:
       return false;
     }

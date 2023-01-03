@@ -1629,6 +1629,8 @@ enum bfd_architecture
 #define bfd_mach_m16c          0x75
 #define bfd_mach_m32c          0x78
   bfd_arch_m32r,      /* Renesas M32R (formerly Mitsubishi M32R/D).  */
+#define bfd_mach_mcs      1
+  bfd_arch_mcs,      /* RB GTM MCS */
 #define bfd_mach_m32r          1 /* For backwards compatibility.  */
 #define bfd_mach_m32rx         'x'
 #define bfd_mach_m32r2         '2'
@@ -5110,6 +5112,12 @@ short offset into 11 bits.  */
   BFD_RELOC_MCORE_PCREL_32,
   BFD_RELOC_MCORE_PCREL_JSR_IMM11BY2,
   BFD_RELOC_MCORE_RVA,
+
+/* RB GTM MCS relocations.  */
+  BFD_RELOC_MCS_14,
+  BFD_RELOC_MCS_24,
+  BFD_RELOC_MCS_4,
+  BFD_RELOC_MCS_WXLB,
 
 /* Toshiba Media Processor Relocations.  */
   BFD_RELOC_MEP_8,

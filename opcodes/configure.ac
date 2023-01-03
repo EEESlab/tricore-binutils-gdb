@@ -297,6 +297,7 @@ if test x${all_targets} = xfalse ; then
 	bfd_s12z_arch)		ta="$ta s12z-dis.lo s12z-opc.lo" ;;
 	bfd_m68k_arch)		ta="$ta m68k-dis.lo m68k-opc.lo" ;;
 	bfd_mcore_arch)		ta="$ta mcore-dis.lo" ;;
+	bfd_mcs_arch)           ta="$ta mcs-asm.lo mcs-desc.lo mcs-dis.lo mcs-ibld.lo mcs-opc.lo" using_cgen=yes ;;
 	bfd_mep_arch)		ta="$ta mep-asm.lo mep-desc.lo mep-dis.lo mep-ibld.lo mep-opc.lo" using_cgen=yes ;;
 	bfd_metag_arch)		ta="$ta metag-dis.lo" ;;
 	bfd_microblaze_arch)	ta="$ta microblaze-dis.lo" ;;

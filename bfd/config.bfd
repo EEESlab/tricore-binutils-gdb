@@ -200,6 +200,7 @@ loongarch*)	 targ_archs=bfd_loongarch_arch ;;
 m6811*|m68hc11*) targ_archs="bfd_m68hc11_arch bfd_m68hc12_arch bfd_m9s12x_arch bfd_m9s12xg_arch" ;;
 m6812*|m68hc12*) targ_archs="bfd_m68hc12_arch bfd_m68hc11_arch bfd_m9s12x_arch bfd_m9s12xg_arch" ;;
 m68*)		 targ_archs=bfd_m68k_arch ;;
+mcs)             targ_archs=bfd_mcs_arch ;;
 microblaze*)	 targ_archs=bfd_microblaze_arch ;;
 mips*)		 targ_archs=bfd_mips_arch ;;
 nds32*)		 targ_archs=bfd_nds32_arch ;;
@@ -854,6 +855,10 @@ case "${targ}" in
   mcore-*-pe)
     targ_defvec=mcore_pe_be_vec
     targ_selvecs="mcore_pe_be_vec mcore_pe_le_vec mcore_pei_be_vec mcore_pei_le_vec"
+    ;;
+
+  mcs-*-elf )
+    targ_defvec=mcs_elf32_vec
     ;;
 
   mep-*-elf)

@@ -518,6 +518,7 @@ do
     mcore_pe_le_vec)		 tb="$tb pe-mcore.lo peigen.lo $coff" ;;
     mcore_pei_be_vec)		 tb="$tb pei-mcore.lo peigen.lo $coff" ;;
     mcore_pei_le_vec)		 tb="$tb pei-mcore.lo peigen.lo $coff" ;;
+    mcs_elf32_vec)               tb="$tb elf32-mcs.lo elf32.lo $elf" ;;
     mep_elf32_vec)		 tb="$tb elf32-mep.lo elf32.lo $elf" ;;
     mep_elf32_le_vec)		 tb="$tb elf32-mep.lo elf32.lo $elf" ;;
     metag_elf32_vec)		 tb="$tb elf32-metag.lo elf32.lo $elf" ;;

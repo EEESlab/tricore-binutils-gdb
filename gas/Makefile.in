@@ -655,6 +655,7 @@ TARGET_CPU_CFILES = \
 	config/tc-m68k.c \
 	config/tc-s12z.c \
 	config/tc-mcore.c \
+	config/tc-mcs.c \
 	config/tc-mep.c \
 	config/tc-metag.c \
 	config/tc-microblaze.c \
@@ -730,6 +731,7 @@ TARGET_CPU_HFILES = \
 	config/tc-m68k.h \
 	config/tc-s12z.h \
 	config/tc-mcore.h \
+	config/tc-mcs.h \
 	config/tc-mep.h \
 	config/tc-metag.h \
 	config/tc-microblaze.h \
@@ -969,6 +971,7 @@ CPU_DOCS = \
 	doc/c-m32r.texi \
 	doc/c-m68hc11.texi \
 	doc/c-m68k.texi \
+	doc/c-mcs.texi \
 	doc/c-s12z.texi \
 	doc/c-metag.texi \
 	doc/c-microblaze.texi \
@@ -1145,6 +1148,8 @@ config/tc-m68k.$(OBJEXT): config/$(am__dirstamp) \
 config/tc-s12z.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-mcore.$(OBJEXT): config/$(am__dirstamp) \
+	config/$(DEPDIR)/$(am__dirstamp)
+config/tc-mcs.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
 config/tc-mep.$(OBJEXT): config/$(am__dirstamp) \
 	config/$(DEPDIR)/$(am__dirstamp)
@@ -1393,6 +1398,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-m68hc11.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-m68k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-mcore.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-mcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-mep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-metag.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@config/$(DEPDIR)/tc-microblaze.Po@am__quote@

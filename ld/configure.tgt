@@ -502,6 +502,8 @@ mcore-*-pe)		targ_emul=mcorepe ;
 			;;
 mcore-*-elf)		targ_emul=elf32mcore
 			;;
+mcs-*-elf)		targ_emul=elf32mcs
+			;;
 mep-*-elf)		targ_emul=elf32mep
 			;;
 metag-*-*)		targ_emul=elf32metag

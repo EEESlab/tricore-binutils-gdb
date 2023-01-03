@@ -440,6 +440,8 @@
 /* Vitesse IQ2000.  */
 #define EM_IQ2000		0xFEBA
 
+#define EM_GTM_MCS              0xAF0F     /* RB GTM MCS processor core */
+
 /* NIOS magic number - no EABI available.  */
 #define EM_NIOS32		0xFEBB
 

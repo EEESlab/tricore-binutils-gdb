@@ -74,6 +74,7 @@ HFILES = \
 	m32c-desc.h m32c-opc.h \
 	m32r-desc.h m32r-opc.h \
 	mcore-opc.h \
+	mcs-desc.h mcs-opc.h \
 	mep-desc.h mep-opc.h \
 	microblaze-opc.h \
 	mt-desc.h mt-opc.h \
@@ -198,6 +199,11 @@ TARGET32_LIBOPCODES_CFILES = \
 	s12z-dis.c \
 	s12z-opc.c \
 	mcore-dis.c \
+	mcs-asm.c \
+	mcs-desc.c \
+	mcs-dis.c \
+	mcs-ibld.c \
+	mcs-opc.c \	
 	mep-asm.c \
 	mep-desc.c \
 	mep-dis.c \
@@ -334,7 +340,7 @@ po/POTFILES.in: @MAINT@ Makefile
 
 CLEANFILES = \
 	stamp-epiphany stamp-fr30 stamp-frv stamp-ip2k stamp-iq2000 stamp-lm32 \
-	stamp-m32c stamp-m32r stamp-mep stamp-mt stamp-or1k stamp-xstormy16 \
+	stamp-m32c stamp-m32r stamp-mcs stamp-mep stamp-mt stamp-or1k stamp-xstormy16 \
 	libopcodes.a stamp-lib
 
 
@@ -351,7 +357,7 @@ CGENDEPS = \
 	$(CGENDIR)/opc-opinst.scm \
 	cgen-asm.in cgen-dis.in cgen-ibld.in
 
-CGEN_CPUS = cris epiphany fr30 frv ip2k iq2000 lm32 m32c m32r mep mt or1k xstormy16
+CGEN_CPUS = cris epiphany fr30 frv ip2k iq2000 lm32 m32c m32r mcs mep mt or1k xstormy16
 
 if CGEN_MAINT
 BPF_DEPS = stamp-bpf
@@ -364,6 +370,7 @@ IQ2000_DEPS = stamp-iq2000
 LM32_DEPS = stamp-lm32
 M32C_DEPS = stamp-m32c
 M32R_DEPS = stamp-m32r
+MCS_DEPS = stamp-mcs
 MEP_DEPS = stamp-mep
 MT_DEPS = stamp-mt
 OR1K_DEPS = stamp-or1k
@@ -478,6 +485,12 @@ stamp-m32r: $(CGENDEPS) $(CPUDIR)/m32r.cpu $(CPUDIR)/m32r.opc
 	$(MAKE) run-cgen arch=m32r prefix=m32r options=opinst \
 		archfile=$(CPUDIR)/m32r.cpu \
 		opcfile=$(CPUDIR)/m32r.opc extrafiles=opinst
+
+$(srcdir)/mcs-desc.h $(srcdir)/mcs-desc.c $(srcdir)/mcs-opc.h $(srcdir)/mcs-opc.c $(srcdir)/mcs-ibld.c $(srcdir)/mcs-asm.c $(srcdir)/mcs-dis.c: $(MCS_DEPS)
+	@true
+stamp-mcs: $(CGENDEPS) $(CPUDIR)/mcs.cpu $(CPUDIR)/mcs.opc
+	$(MAKE) run-cgen arch=mcs prefix=mcs options= \
+		archfile=$(CPUDIR)/mcs.cpu opcfile=$(CPUDIR)/mcs.opc extrafiles=
 
 $(srcdir)/mep-desc.h $(srcdir)/mep-desc.c $(srcdir)/mep-opc.h $(srcdir)/mep-opc.c $(srcdir)/mep-ibld.c $(srcdir)/mep-asm.c $(srcdir)/mep-dis.c: $(MEP_DEPS)
 	@true

@@ -828,7 +828,9 @@ static bfd_vma
 obj_elf_parse_section_letters (char *str, size_t len,
 			       bool *is_clone, bfd_vma *gnu_attr)
 {
+#if defined(SHF_CORE_NUMBER)
   int core = -1;
+#endif
   bfd_vma attr = 0;
   *is_clone = false;
 
@@ -874,6 +876,7 @@ obj_elf_parse_section_letters (char *str, size_t len,
 	case 'T':
 	  attr |= SHF_TLS;
 	  break;
+#if defined(SHF_CORE_NUMBER)
 	case 'c':
            if ((len > 1) && (ISDIGIT(str[1])))
            {
@@ -892,6 +895,7 @@ obj_elf_parse_section_letters (char *str, size_t len,
             }
             attr |= SHF_CORE_NUMBER(core);
             break;
+#endif
 	case 'd':
 	  *gnu_attr |= SHF_GNU_MBIND;
 	  break;

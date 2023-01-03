@@ -3863,7 +3863,7 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       || bfd_get_flavour (obfd) != bfd_target_elf_flavour)
     return true;
 
-  if (((bfd_get_arch (ibfd) != bfd_arch_tricore) /*TODO && (bfd_get_arch (ibfd) != bfd_arch_mcs)*/)
+  if (((bfd_get_arch (ibfd) != bfd_arch_tricore) && (bfd_get_arch (ibfd) != bfd_arch_mcs))
       ||
       (bfd_get_arch (obfd) != bfd_arch_tricore))
     {

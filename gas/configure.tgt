@@ -78,6 +78,7 @@ case ${cpu} in
   m6811|m6812|m68hc12)	cpu_type=m68hc11 ;;
   m683??)		cpu_type=m68k ;;
   s12z)               cpu_type=s12z ;;
+  mcs)                  cpu_type=mcs ;;
   mep)			cpu_type=mep endian=little ;;
   microblazeel*)	cpu_type=microblaze endian=little;;
   microblaze*)		cpu_type=microblaze endian=big;;
@@ -300,6 +301,8 @@ case ${generic_target} in
   m68k-*-haiku*)			fmt=elf em=haiku ;;
 
   s12z-*-*)				fmt=elf ;;
+
+  mcs-*-elf)                            fmt=elf ;;
 
   mep-*-elf)				fmt=elf ;;
 
