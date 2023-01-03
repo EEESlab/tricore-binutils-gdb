@@ -174,6 +174,7 @@ enum option_values
   OPTION_NO_WARN_RWX_SEGMENTS,
   OPTION_ENABLE_LINKER_VERSION,
   OPTION_DISABLE_LINKER_VERSION,
+  OPTION_EXT_MAP,
 };
 
 /* The initial parser states.  */

@@ -765,6 +765,7 @@ BFD32_BACKENDS = \
 	elf32-d30v.lo \
 	elf32-dlx.lo \
 	elf32-epiphany.lo \
+	elf32-extmap.lo \
 	elf32-fr30.lo \
 	elf32-frv.lo \
 	elf32-ft32.lo \
@@ -901,6 +902,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-d30v.c \
 	elf32-dlx.c \
 	elf32-epiphany.c \
+	elf32-extmap.c \
 	elf32-fr30.c \
 	elf32-frv.c \
 	elf32-ft32.c \
@@ -1573,6 +1575,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-d30v.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-dlx.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-epiphany.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-extmap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-fr30.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-frv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-ft32.Plo@am__quote@

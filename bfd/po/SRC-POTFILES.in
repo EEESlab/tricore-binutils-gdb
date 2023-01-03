@@ -171,6 +171,7 @@ elf32-d30v.c
 elf32-dlx.c
 elf32-dlx.h
 elf32-epiphany.c
+elf32-extmap.c
 elf32-fr30.c
 elf32-frv.c
 elf32-ft32.c

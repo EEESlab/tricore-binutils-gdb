@@ -13951,7 +13951,7 @@ do
     mcore_pe_le_vec)		 tb="$tb pe-mcore.lo peigen.lo $coff" ;;
     mcore_pei_be_vec)		 tb="$tb pei-mcore.lo peigen.lo $coff" ;;
     mcore_pei_le_vec)		 tb="$tb pei-mcore.lo peigen.lo $coff" ;;
-    mcs_elf32_vec) 		 tb="$tb elf32-mcs.lo elf32.lo $elf" ;;
+    mcs_elf32_vec) 		 tb="$tb elf32-mcs.lo elf32.lo elf32-extmap.lo $elf" ;;
     mep_elf32_vec)		 tb="$tb elf32-mep.lo elf32.lo $elf" ;;
     mep_elf32_le_vec)		 tb="$tb elf32-mep.lo elf32.lo $elf" ;;
     metag_elf32_vec)		 tb="$tb elf32-metag.lo elf32.lo $elf" ;;
@@ -14080,7 +14080,7 @@ do
     tilegx_elf64_be_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
     tilegx_elf64_le_vec)	 tb="$tb elf64-tilegx.lo elfxx-tilegx.lo elf64.lo $elf" ; target_size=64 ;;
     tilepro_elf32_vec)		 tb="$tb elf32-tilepro.lo elf32.lo $elf" ;;
-    tricore_elf32_vec)		 tb="$tb elf32-tricore.lo elf32.lo $elf" ;;
+    tricore_elf32_vec)		 tb="$tb elf32-tricore.lo elf32.lo elf32-extmap.lo $elf" ;;
     v800_elf32_vec)		 tb="$tb elf32-v850.lo elf32.lo $elf" ;;
     v850_elf32_vec)		 tb="$tb elf32-v850.lo elf32.lo $elf" ;;
     vax_aout_1knbsd_vec)	 tb="$tb vax1knetbsd.lo aout32.lo" ;;

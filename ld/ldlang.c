@@ -42,6 +42,7 @@
 #include "hashtab.h"
 #include "elf-bfd.h"
 #include "bfdver.h"
+#include "elf32-extmap.h"
 
 #if BFD_SUPPORTS_PLUGINS
 #include "plugin.h"
@@ -2333,6 +2334,23 @@ lang_map (void)
   if (config.print_map_discarded && ! dis_header_printed)
     minfo (_("\nThere are no discarded input sections\n"));
 
+  /* extmap support */
+
+  p_extmap_info emi = (p_extmap_info) xcalloc (1, sizeof(extmap_info_t));
+
+  elf32_collect_extmap_info (&link_info, emi, NULL);
+
+  if (config.map_file)
+    {
+      elf32_print_extmap_header (config.map_file, config.map_filename);
+
+      elf32_print_extmap_info (config.map_file, emi, ORDER_BY_ADDRESS);
+      elf32_print_extmap_info (config.map_file, emi, ORDER_BY_NAME);
+
+      elf32_print_extmap_footer (config.map_file);
+    }
+
+
   minfo (_("\nMemory Configuration\n\n"));
   fprintf (config.map_file, "%-16s %-18s %-18s %s\n",
 	   _("Name"), _("Origin"), _("Length"), _("Attributes"));
@@ -2786,8 +2804,8 @@ lang_add_section (lang_statement_list_type *ptr,
       if (section->flags & SEC_SMALL_DATA)
 	output->bfd_section->flags |= SEC_SMALL_DATA;
 
-      // TOCHECKif (section->alignment_power > output->bfd_section->alignment_power)
-	//output->bfd_section->alignment_power = section->alignment_power;      
+      if (section->alignment_power > output->bfd_section->alignment_power)
+	output->bfd_section->alignment_power = section->alignment_power;      
     }
 
   if ((flags & SEC_TIC54X_BLOCK) != 0
@@ -4681,6 +4699,16 @@ print_output_section_statement
 	  print_dot = section->vma;
 
 	  len = strlen (output_section_statement->name);
+	  if (output_section_statement->region)
+	    {
+	      while (len < SECTION_NAME_MAP_LENGTH-1)
+		{
+		  print_space ();
+		  ++len;
+		}
+	      minfo(" memory region -> %s",output_section_statement->region->name_list.name);
+            }
+	  
 	  if (len >= SECTION_NAME_MAP_LENGTH - 1)
 	    {
 	      print_nl ();

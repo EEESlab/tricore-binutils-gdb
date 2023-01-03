@@ -309,6 +309,7 @@ BFD32_BACKENDS = \
 	elf32-d30v.lo \
 	elf32-dlx.lo \
 	elf32-epiphany.lo \
+	elf32-extmap.lo \
 	elf32-fr30.lo \
 	elf32-frv.lo \
 	elf32-ft32.lo \
@@ -445,6 +446,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-d30v.c \
 	elf32-dlx.c \
 	elf32-epiphany.c \
+	elf32-extmap.c \
 	elf32-fr30.c \
 	elf32-frv.c \
 	elf32-ft32.c \

@@ -41,6 +41,7 @@
 #include "ldver.h"
 #include "ldemul.h"
 #include "demangle.h"
+#include "elf32-extmap.h"
 #if BFD_SUPPORTS_PLUGINS
 #include "plugin.h"
 #endif /* BFD_SUPPORTS_PLUGINS */
@@ -623,6 +624,15 @@ static const struct ld_option ld_options[] =
 		   "                                <method> is: share-unconflicted (default),\n"
 		   "                                             share-duplicated"),
     TWO_DASHES },
+  { {"extmap", required_argument, NULL, OPTION_EXT_MAP },
+    '\0', N_("=[hLlNna]"), N_("Output additional information in the map file:\n\
+                          h - print header (version, date, ...)\n\
+                          L - list global symbols sorted by name\n\
+                          l - list all symbols sorted by name\n\
+                          N - list global symbols sorted by address\n\
+                          n - list all symbols sorted by address\n\
+                          a - set options to '=hln'."),
+    TWO_DASHES },  
 };
 
 #define OPTION_COUNT ARRAY_SIZE (ld_options)
@@ -1782,6 +1792,20 @@ parse_args (unsigned argc, char **argv)
 	  else
 	    einfo (_("%F%P: bad --ctf-share-types option: %s\n"), optarg);
 	  break;
+
+	case OPTION_EXT_MAP:
+	  {	  
+	    char *ill_sub_opt = NULL;
+	    extern char *elf32_parse_extmap_args(char *,const char *);
+
+	    if ((optarg == NULL) || (*optarg == '\0'))
+	      einfo (_("%P%F: error: missing sub-option(s) for extmap\n"));
+	    ill_sub_opt = elf32_parse_extmap_args(optarg,program_name);
+	    if (ill_sub_opt != NULL)
+	      einfo (_("%P%F: error: unrecognized extmap sub-option '%s'\n"), ill_sub_opt);
+	  }
+	  break;
+
 	}
     }
 
