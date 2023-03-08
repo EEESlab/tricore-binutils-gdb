@@ -3829,6 +3829,8 @@ static char *tric_arch_name(unsigned long arch)
 		return ("TC_V1.6.1");
 	case EF_EABI_TRICORE_V1_6_2:
 		return ("TC_V1.6.2");
+	case EF_EABI_TRICORE_V1_8:
+		return ("TC_V1.8");
 	default:
 		return ("unknown architecture");
 	}
@@ -3894,6 +3896,7 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
         case EF_EABI_TRICORE_V1_6:
         case EF_EABI_TRICORE_V1_6_1:
         case EF_EABI_TRICORE_V1_6_2:
+        case EF_EABI_TRICORE_V1_8:
           error = true;
           break;
         }
@@ -3904,6 +3907,7 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
         case EF_EABI_TRICORE_V1_6:
         case EF_EABI_TRICORE_V1_6_1:
         case EF_EABI_TRICORE_V1_6_2:
+        case EF_EABI_TRICORE_V1_8:
           error = true;
           break;
         }
@@ -3913,6 +3917,7 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
         case EF_EABI_TRICORE_V1_1:
         case EF_EABI_TRICORE_V1_6_1:
         case EF_EABI_TRICORE_V1_6_2:
+        case EF_EABI_TRICORE_V1_8:
           error = true;
           break;
         }
@@ -3921,6 +3926,7 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
         switch (new_isa) {
         case EF_EABI_TRICORE_V1_1:
         case EF_EABI_TRICORE_V1_6_2:
+        case EF_EABI_TRICORE_V1_8:
           error = true;
           break;
         }
@@ -3928,10 +3934,19 @@ tricore_elf32_merge_private_bfd_data (bfd *ibfd, struct bfd_link_info *info)
       case EF_EABI_TRICORE_V1_6_2:
         switch (new_isa) {
         case EF_EABI_TRICORE_V1_1:
+        case EF_EABI_TRICORE_V1_8:
           error = true;
           break;
         }
         break;
+      case EF_EABI_TRICORE_V1_8:
+        switch (new_isa) {
+        case EF_EABI_TRICORE_V1_1:
+          error = true;
+          break;
+        }
+        break;
+
       }
       if (error == true)
         {

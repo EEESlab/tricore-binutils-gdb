@@ -37,15 +37,17 @@ typedef enum _tricore_opcode_arch_val
   TRICORE_V1_6    = 0x00000200,
   TRICORE_V1_6_1  = 0x00000400,
   TRICORE_V1_6_2  = 0x00000800,
+  TRICORE_V1_8    = 0x00001000,
   TRICORE_PCP     = 0x00000010,
   TRICORE_PCP2    = 0x00000020
 } tricore_isa;
-#define TRICORE_ISA_MASK        0x00000f0f
+#define TRICORE_ISA_MASK        0x00001f0f
 
 /* Some handy definitions for upward/downward compatibility of insns.  */
 
 //#define TRICORE_V2_UP      TRICORE_V2
-#define TRICORE_V1_6_2_UP (TRICORE_V1_6_2)
+#define TRICORE_V1_8_UP   (TRICORE_V1_8)
+#define TRICORE_V1_6_2_UP (TRICORE_V1_6_2 | TRICORE_V1_8_UP)
 #define TRICORE_V1_6_1_UP (TRICORE_V1_6_1 | TRICORE_V1_6_2_UP)
 #define TRICORE_V1_6_UP   (TRICORE_V1_6 | TRICORE_V1_6_1_UP)
 #define TRICORE_V1_3_1_UP (TRICORE_V1_3_1 | TRICORE_V1_6_UP)
@@ -59,6 +61,7 @@ typedef enum _tricore_opcode_arch_val
 #define TRICORE_V1_6_DN   (TRICORE_V1_6 | TRICORE_V1_3_1_DN)
 #define TRICORE_V1_6_1_DN (TRICORE_V1_6_1 | TRICORE_V1_6_DN)
 #define TRICORE_V1_6_2_DN (TRICORE_V1_6_2 | TRICORE_V1_6_1_DN)
+#define TRICORE_V1_8_DN   (TRICORE_V1_8 | TRICORE_V1_6_2_DN)
 
 /* The various instruction formats of the TriCore architecture.  */
 

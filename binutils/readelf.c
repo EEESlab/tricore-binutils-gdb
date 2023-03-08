@@ -3757,6 +3757,9 @@ decode_tricore_machine_flags (unsigned int e_flags, char buf[], size_t size)
     case EF_TRICORE_V1_6_2:
       strncat(buf, ", TC1.6.2", size);
       break;
+    case EF_TRICORE_V1_8:
+      strncat(buf, ", TC1.8", size);
+      break;
     default:
       strncat(buf, ", TC???", size);
   }  

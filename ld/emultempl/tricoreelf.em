@@ -97,6 +97,7 @@ PARSE_AND_LIST_OPTIONS='
 			  tc16  - Core architecture V1.6\n\
 			  tc161 - Core architecture V1.6.1\n\
 			  tc162 - Core architecture V1.6.2\n\
+			  tc18  - Core architecture V1.8\n\
 			  Deprecated core values:\n\
 			  tc16e - Core architecture V1.6E\n\
 			  tc16p - Core architecture V1.6P\n\
@@ -220,6 +221,11 @@ parse_arch_args (args)
 	if (!strcmp(args,"tc162"))
 	{
 		tricore_core_arch = EF_EABI_TRICORE_V1_6_2;
+		return;
+	}
+	if (!strcmp(args,"tc18"))
+	{
+		tricore_core_arch = EF_EABI_TRICORE_V1_8;
 		return;
 	}
   	einfo (_("%P%F: error: invalid core architecture '%s' for option --mcpu=\n"), args);

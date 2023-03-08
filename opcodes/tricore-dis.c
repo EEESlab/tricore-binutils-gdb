@@ -1296,6 +1296,10 @@ print_decoded_insn (bfd_vma memaddr, struct disassemble_info *info)
 	  DPRINT (DFILE, "%%e%d", dec_insn.regs[i]);
 	  break;
 
+	case 'Q':
+	  DPRINT (DFILE, "%%q%d", dec_insn.regs[i]);
+	  break;
+
 	case 'i':
 	  DPRINT (DFILE, "%%d15");
 	  break;
@@ -1898,6 +1902,9 @@ print_insn_tricore (bfd_vma memaddr,
             break;
           case EF_EABI_TRICORE_V1_6_2:
             current_isa = TRICORE_V1_6_2;
+            break;
+	  case EF_EABI_TRICORE_V1_8:
+            current_isa = TRICORE_V1_8;
             break;
           default:
             (*info->fprintf_func) (info->stream, "unknown tricore architecture using TC1.6.2 instruction set");

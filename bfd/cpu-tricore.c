@@ -180,8 +180,26 @@ static const bfd_arch_info_type arch_info_struct[] =
     bfd_default_compatible,	/* We're compatible with ourselves.  */
     bfd_default_scan,		/* Let BFD find the default arch.  */
     bfd_arch_default_fill,      /* Default fill.  */
-    (bfd_arch_info_type *) 0,	/* No more arch types for TriCore.  */
+    &arch_info_struct[6],       /* Next TriCore architecture.  */
     0				/* Maximum offset of a reloc from the start of an insn. */
+  },
+
+  /* TriCore V1.8 ISA.  */
+  {
+    32,                         /* 32 bits per word.  */
+    32,                         /* 32 bits per address.  */
+    8,                          /* 8 bits per byte.  */
+    bfd_arch_tricore,           /* Architecture type.  */
+    EF_EABI_TRICORE_V1_8,       /* Machine type.  */
+    "tricore",                  /* Name of architecture (internal use).  */
+    "TriCore:V1_8",             /* Name of architecture to print.  */
+    3,                          /* Align sections on 8 byte boundaries.  */
+    false,                      /* No, this is ain't the default arch type.  */
+    bfd_default_compatible,     /* We're compatible with ourselves.  */
+    bfd_default_scan,           /* Let BFD find the default arch.  */
+    bfd_arch_default_fill,      /* Default fill.  */
+    (bfd_arch_info_type *) 0,   /* No more arch types for TriCore.  */
+    0                           /* Maximum offset of a reloc from the start of an insn. */
   }
 };
 
@@ -263,6 +281,7 @@ tricore_init_arch_vars (mach)
     case EF_EABI_TRICORE_V1_6:
     case EF_EABI_TRICORE_V1_6_1:
     case EF_EABI_TRICORE_V1_6_2:
+    case EF_EABI_TRICORE_V1_8:
       tricore_mask_abs =  0x0c0000ff;
       tricore_mask_absb = 0x0c0000ff;
       tricore_mask_b =    0x000000ff;

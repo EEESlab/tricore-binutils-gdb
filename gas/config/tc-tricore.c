@@ -1230,11 +1230,13 @@ md_begin()
     case TRICORE_V1_6:
     case TRICORE_V1_6_1:
     case TRICORE_V1_6_2:
+    case TRICORE_V1_8:
         {
           unsigned int isa_mask = (current_isa & TRICORE_ISA_MASK);
           mach = (isa_mask == TRICORE_V1_6)?  EF_EABI_TRICORE_V1_6
            : (isa_mask == TRICORE_V1_6_1)?  EF_EABI_TRICORE_V1_6_1
-           : EF_EABI_TRICORE_V1_6_2;
+	   : (isa_mask == TRICORE_V1_6_2)?  EF_EABI_TRICORE_V1_6_2
+           : EF_EABI_TRICORE_V1_8;
           tricore_insn_jeq_idx = 0xbe;
           tricore_insn_jne_idx = 0xfe;
           tricore_insn_jeq_i4x = 0x9e;
@@ -1367,6 +1369,7 @@ TODO
   pseudo_codes['l'] = "l";
   pseudo_codes['L'] = "L";
   pseudo_codes['D'] = "D";
+  pseudo_codes['Q'] = "Q";
   pseudo_codes['i'] = "i";
   pseudo_codes['a'] = "aUAIP";
   pseudo_codes['A'] = "AP";
@@ -1535,6 +1538,9 @@ md_parse_option (int c, const char *arg)
       else if (!strcmp (arg, "tc162")
       	       || !strcmp (arg, "TriCore:V1_6_2"))
         current_isa = (current_isa & ~TRICORE_ISA_MASK) | TRICORE_V1_6_2;
+      else if (!strcmp (arg, "tc18")
+      	       || !strcmp (arg, "TriCore:V1_8"))
+        current_isa = (current_isa & ~TRICORE_ISA_MASK) | TRICORE_V1_8;
       else if (!strcmp (arg, "cpu009"))
         {
 	  workaround_cpu9 = 1;
@@ -2171,6 +2177,7 @@ TriCore-specific options:\n\
   -mtc16		  assemble for the TCV1.6 instruction set\n\
   -mtc161		  assemble for the TCV1.6.1 (TC1.6P & TC1.6E) instruction set\n\
   -mtc162		  assemble for the TCV1.6.2 instruction set\n\
+  -mtc18		  assemble for the TCV1.8 instruction set\n\
   -mcpu009		  insert 2 NOPs after DSYNC (workaround for CPU.9 bug)\n\
   -mcpu034		  insert ISYNC after DSYNC (workaround for CPU_TC.034/\n\
 			    COR17 bug)\n\
@@ -2668,7 +2675,7 @@ restart_scan:
 	      the_insn.ops[numops] = 'P';
 	      break;
 	    }
-	  if ((mode != 'd') && (mode != 'e') && (mode != 'a'))
+	  if ((mode != 'q') && (mode != 'd') && (mode != 'e') && (mode != 'a'))
 	    {
 	      the_insn.error = _("Invalid register specification");
 	      return;
@@ -2708,6 +2715,16 @@ restart_scan:
 		  return;
 		}
 	      the_insn.ops[numops] = 'D';
+	    }
+	  else if (mode == 'q')
+	    {
+	      /* An extended data register.  */
+	      if (the_insn.regs[numops] & 3)
+	        {
+	          the_insn.error = _("Invalid extended register specification");
+	          return;
+	        }
+	      the_insn.ops[numops] = 'Q';
 	    }
 	  else if (mode == 'a')
 	    {
@@ -3473,6 +3490,10 @@ print_the_insn ()
 
 	case 'D':
 	  printf ("E%d", the_insn.regs[i]);
+	  break;
+
+	case 'Q':
+	  printf ("q%d", the_insn.regs[i]);
 	  break;
 
 	case 'i':
@@ -8774,6 +8795,8 @@ tricore_elf_final_processing ()
     eflags = EF_EABI_TRICORE_V1_6_1;
   if (current_isa & TRICORE_V1_6_2)
     eflags = EF_EABI_TRICORE_V1_6_2;
+  if (current_isa & TRICORE_V1_8)
+    eflags = EF_EABI_TRICORE_V1_8;
 
   elf_elfheader (stdoutput)->e_flags = eflags;
 }

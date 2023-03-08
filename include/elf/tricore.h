@@ -87,6 +87,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #define EF_TRICORE_V1_6_2	0x00000800
 #define EF_EABI_TRICORE_V1_6_2	0x00100000
 
+/* Instruction set architecture V1.8.  */
+
+#define EF_TRICORE_V1_8		0x00001000
+#define EF_EABI_TRICORE_V1_8	0x00080000
+
 #if 0
 /* Instruction set architecture V2.  */
 
@@ -103,8 +108,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #define EF_TRICORE_PCP2		0x00000020
 #define EF_EABI_TRICORE_PCP2	0x02000000
 
-#define EF_TRICORE_CORE_MASK    	0x00000f0f
-#define EF_EABI_TRICORE_CORE_MASK	0xf0f00000
+#define EF_TRICORE_CORE_MASK    	0x00001f0f
+#define EF_EABI_TRICORE_CORE_MASK	0xf0f80000
 
 /* function to convert old to new eflags definition */
 extern unsigned long tricore_elf32_convert_eflags(unsigned long eflags);
