@@ -911,7 +911,7 @@ union _bfd_doprnt_args
 
 /* Maximum number of _bfd_error_handler args.  Don't increase this
    without changing the code handling positional parameters.  */
-#define MAX_ARGS 9
+#define MAX_ARGS 20
 
 /* This macro and _bfd_doprnt taken from libiberty _doprnt.c, tidied a
    little and extended to handle '%pA', '%pB' and positional parameters.  */
