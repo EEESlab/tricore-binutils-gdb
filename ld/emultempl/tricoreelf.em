@@ -39,6 +39,7 @@ LDEMUL_DEFINE_SDA_SECTION=tricore_elf32_define_sda_section
 LDEMUL_ADD_EXPORTED_SYMBOL=tricore_elf32_add_exported_symbol
 LDEMUL_ADD_MEMORY_MAP=tricore_elf32_add_memory_map
 LDEMUL_FINISH=tricore_elf32_finish
+LDEMUL_SET_SYMBOLS=gld${EMULATION_NAME}_set_symbols
 
 #
 # Additional options.
@@ -325,11 +326,40 @@ SDA_${EMULATION_NAME}_before_allocation ()
   /* Call main function; we're just extending it.  */
   gld${EMULATION_NAME}_before_allocation ();
 
-  if (! RELAXATION_DISABLED_BY_USER)
-    tricore_elf32_relax_bdata = tricore_elf32_relax_24rel = true;
-  else if (tricore_elf32_relax_bdata
-  	   || tricore_elf32_relax_24rel)
-    ENABLE_RELAXATION;
+  if (!bfd_link_relocatable (&link_info))
+  {
+    /* We always need at least some relaxation to handle code alignment.  */
+    if (RELAXATION_DISABLED_BY_USER)
+      TARGET_ENABLE_RELAXATION;
+    else
+      ENABLE_RELAXATION;
+  }
+
+  if (RELAXATION_ENABLED)
+    {
+      asection *isec;
+      bfd *ibfd;
+      bool again;
+      struct bfd_link_info *info = &link_info;
+
+      for (ibfd = info->input_bfds; ibfd; ibfd = ibfd->link.next)
+        for (isec = ibfd->sections; isec; isec = isec->next)
+          if (isec->rawsize > 1)
+            {
+              if (isec->size == 0)
+                isec->size = isec->rawsize;
+              if ((isec->rawsize == isec->size)
+                  && (!strcmp (isec->name, ".bdata")
+                      || !strncmp (isec->name, ".bdata.", 7)
+                      || !strcmp (isec->name, ".bbss")
+                      || !strncmp (isec->name, ".bbss.", 6)))
+                if (!bfd_relax_section (ibfd, isec, info, &again))
+                  xexit (1);
+            }
+    }
+
+
+  return;
 
   /* GNU ld supports relaxing in a very general sense, meaning it's
      completely up to the backend to decide what changes it wants to
@@ -363,7 +393,7 @@ SDA_${EMULATION_NAME}_before_allocation ()
      presents the allocating process with the physically needed sizes of
      the bit sections instead of their uncompressed sizes.  */
 
-  if (tricore_elf32_relax_bdata
+  if (RELAXATION_ENABLED
       && !bfd_link_relocatable (&link_info)
       && link_info.type != type_dll)
     {
@@ -464,6 +494,13 @@ SDA_${EMULATION_NAME}_after_allocation (void)
   gld${EMULATION_NAME}_after_allocation();
 }
 
+
+static void
+gld${EMULATION_NAME}_set_symbols (void)
+{
+  bfd_vma val = 0;
+//  lang_add_assignment (exp_assign ("*ABS*", exp_intop (val), false));
+}
 
 EOF
 fi

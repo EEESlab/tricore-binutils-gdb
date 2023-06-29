@@ -6769,6 +6769,14 @@ emit_code ()
   /* Emit DWARF2 line debug info (if requested).  */
   dwarf2_emit_insn (oplen);
 
+  const char *name = the_insn.code->name;
+  if (!strcmp (name, "ji") || !strcmp (name, "jli"))
+  {
+
+    fix_new_exp (frag_now, (pfrag - frag_now->fr_literal), 0,
+                       &the_insn.opexp[0], the_insn.pcrel[0], BFD_RELOC_TRICORE_INDIRECT);
+  }
+
   /* Emit fixups and relaxation infos if necessary.  */
   dont_relax = use_insn16  || (the_insn.code->format == TRICORE_FMT_B) ;
   for (i = 0; i < the_insn.nops; ++i)
@@ -8105,14 +8113,18 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
   else
     opcode = bfd_getl16 (buf);
 
+  //printf ("VALP = %x fixP->fx_offset = %x, where = %x\n", *valP, fixP->fx_offset, fixP->fx_frag->fr_address + fixP->fx_where );
   switch (reloc)
     {
+    case BFD_RELOC_TRICORE_INDIRECT:
+	    break;
     case BFD_RELOC_TRICORE_24REL:
       CHECK_DISPLACEMENT (val, -16777216, 16777214);
-      val >>= 1;
+      //*valP -= val;
+      //val >>= 1;
       opcode &= ~((0xffff << 16) | (0xff0000 >> 8));
-      opcode |= ((val & 0xffff) << 16);
-      opcode |= ((val & 0xff0000) >> 8);
+      //opcode |= ((val & 0xffff) << 16);
+      //opcode |= ((val & 0xff0000) >> 8);
       break;
 
     case BFD_RELOC_TRICORE_24ABS:
@@ -8124,8 +8136,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
       val >>= 1;
       val |= ((val & 0x78000000) >> 7);
       opcode &= ~((0xffff << 16) | (0xff0000 >> 8));
-      opcode |= ((val & 0xffff) << 16);
-      opcode |= ((val & 0xff0000) >> 8);
+      //opcode |= ((val & 0xffff) << 16);
+      //opcode |= ((val & 0xff0000) >> 8);
       break;
 
     case BFD_RELOC_TRICORE_18ABS:
@@ -8135,10 +8147,10 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(FMT_ABS_OFF18_MSK);
-      opcode |= ((val & 0x3f) << 16);
-      opcode |= ((val & 0x3c0) << 22);
-      opcode |= ((val & 0x3c00) << 12);
-      opcode |= ((val & 0xf0000000) >> 16);
+      //opcode |= ((val & 0x3f) << 16);
+      //opcode |= ((val & 0x3c0) << 22);
+      //opcode |= ((val & 0x3c00) << 12);
+      //opcode |= ((val & 0xf0000000) >> 16);
       break;
 
     case BFD_RELOC_TRICORE_18ABS_14:
@@ -8149,33 +8161,33 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	}
       opcode &= ~(FMT_ABS_OFF18_MSK);
       val = val >> 14;
-      opcode |= ((val &    0x3f) << 16);
-      opcode |= ((val &   0x3c0) << 22);
-      opcode |= ((val &  0x3c00) << 12);
-      opcode |= ((val & 0x3c000) >> 2);
+      //opcode |= ((val &    0x3f) << 16);
+      //opcode |= ((val &   0x3c0) << 22);
+      //opcode |= ((val &  0x3c00) << 12);
+      //opcode |= ((val & 0x3c000) >> 2);
       break;
 
     case BFD_RELOC_TRICORE_HI:
       opcode &= ~(0xffff << 12);
-      opcode |= (((val >> 16) & 0xffff) << 12);
+      //opcode |= (((val >> 16) & 0xffff) << 12);
       break;
 
     case BFD_RELOC_TRICORE_HIADJ:
       opcode &= ~(0xffff << 12);
-      opcode |= ((((val + 0x8000) >> 16) & 0xffff) << 12);
+      //opcode |= ((((val + 0x8000) >> 16) & 0xffff) << 12);
       break;
 
     case BFD_RELOC_TRICORE_LO:
       opcode &= ~(0xffff << 12);
-      opcode |= ((val & 0xffff) << 12);
+      //opcode |= ((val & 0xffff) << 12);
       break;
 
     case BFD_RELOC_TRICORE_LO2:
       opcode &= ~((0x3f << 16)| (0x3c0 << 22)| (0xfc00 << 12));
 
-      opcode |= ((val & 0x3f) << 16);
-      opcode |= ((val & 0x3c0) << 22);
-      opcode |= ((val & 0xfc00) << 12);
+      //opcode |= ((val & 0x3f) << 16);
+      //opcode |= ((val & 0x3c0) << 22);
+      //opcode |= ((val & 0xfc00) << 12);
       break;
 
     case BFD_RELOC_TRICORE_16SM:
@@ -8191,13 +8203,13 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xffff << 12);
-      opcode |= ((val & 0xffff) << 12);
+      //opcode |= ((val & 0xffff) << 12);
       break;
 
     case BFD_RELOC_TRICORE_15REL:
       CHECK_DISPLACEMENT (val, -32768, 32766);
       opcode &= ~(0x7fff << 16);
-      opcode |= (((val >> 1) & 0x7fff) << 16);
+      //opcode |= (((val >> 1) & 0x7fff) << 16);
       break;
 
     case BFD_RELOC_TRICORE_9ZCONST:
@@ -8207,7 +8219,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0x1ff << 12);
-      opcode |= (val << 12);
+      //opcode |= (val << 12);
       break;
 
     case BFD_RELOC_TRICORE_9SCONST:
@@ -8217,14 +8229,14 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0x1ff << 12);
-      opcode |= ((val & 0x1ff) << 12);
+      //opcode |= ((val & 0x1ff) << 12);
       break;
 
     case BFD_RELOC_TRICORE_8REL:
       CHECK_DISPLACEMENT (val, -256, 254);
       val >>= 1;
       opcode &= ~(0xff << 8);
-      opcode |= ((val & 0xff) << 8);
+      //opcode |= ((val & 0xff) << 8);
       break;
 
     case BFD_RELOC_TRICORE_8CONST:
@@ -8234,7 +8246,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xff << 8);
-      opcode |= (val << 8);
+      //opcode |= (val << 8);
       break;
 
     case BFD_RELOC_TRICORE_10OFF:
@@ -8244,8 +8256,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~((0x3f << 16) | (0x3c0 << 22));
-      opcode |= ((val & 0x3f) << 16);
-      opcode |= ((val & 0x3c0) << 22);
+      //opcode |= ((val & 0x3f) << 16);
+      //opcode |= ((val & 0x3c0) << 22);
       break;
 
     case BFD_RELOC_TRICORE_16OFF:
@@ -8255,9 +8267,9 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~((0x3f << 16)| (0x3c0 << 22)| (0xfc00 << 12));
-      opcode |= ((val & 0x3f) << 16);
-      opcode |= ((val & 0x3c0) << 22);
-      opcode |= ((val & 0xfc00) << 12);
+      //opcode |= ((val & 0x3f) << 16);
+      //opcode |= ((val & 0x3c0) << 22);
+      //opcode |= ((val & 0xfc00) << 12);
       break;
 
     case BFD_RELOC_TRICORE_1BIT:
@@ -8267,7 +8279,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(1 << 11);
-      opcode |= (val << 11);
+      //opcode |= (val << 11);
       break;
 
     case BFD_RELOC_TRICORE_3POS:
@@ -8277,7 +8289,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(7 << 8);
-      opcode |= (val << 8);
+      //opcode |= (val << 8);
       break;
 
     case BFD_RELOC_TRICORE_5POS:
@@ -8287,7 +8299,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0x1f << 16);
-      opcode |= (val << 16);
+      //opcode |= (val << 16);
       break;
 
     case BFD_RELOC_TRICORE_5POS2:
@@ -8297,7 +8309,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0x1f << 23);
-      opcode |= (val << 23);
+      //opcode |= (val << 23);
       break;
 
     case BFD_RELOC_TRICORE_BRCC:
@@ -8307,7 +8319,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= ((val & 0xf) << 12);
+      //opcode |= ((val & 0xf) << 12);
       break;
 
     case BFD_RELOC_TRICORE_BRCZ:
@@ -8317,7 +8329,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= (val << 12);
+      //opcode |= (val << 12);
       break;
 
     case BFD_RELOC_TRICORE_BRNN:
@@ -8327,8 +8339,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~((0xf << 12) | (0x10 << 3));
-      opcode |= ((val & 0xf) << 12);
-      opcode |= ((val & 0x10) << 3);
+      //opcode |= ((val & 0xf) << 12);
+      //opcode |= ((val & 0x10) << 3);
       break;
 
     case BFD_RELOC_TRICORE_RRN:
@@ -8338,7 +8350,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0x3 << 16);
-      opcode |= (val << 16);
+      //opcode |= (val << 16);
       break;
 
     case BFD_RELOC_TRICORE_4CONST:
@@ -8348,29 +8360,29 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= ((val & 0xf) << 12);
+      //opcode |= ((val & 0xf) << 12);
       break;
 
     case BFD_RELOC_TRICORE_4REL:
       CHECK_DISPLACEMENT (val, 0, 30);
       val >>= 1;
       opcode &= ~(0xf << 8);
-      opcode |= ((val & 0xf) << 8);
+      //opcode |= ((val & 0xf) << 8);
       break;
 
     case BFD_RELOC_TRICORE_4REL2:
       CHECK_DISPLACEMENT (val, -32, -2);
       val >>= 1;
       opcode &= ~(0xf << 8);
-      opcode |= ((val & 0xf) << 8);
+      //opcode |= ((val & 0xf) << 8);
       break;
 
     case BFD_RELOC_TRICORE_5REL:
       CHECK_DISPLACEMENT (val, 0, 62);
       val >>= 1;
       opcode &= ~((0xf << 8) | (0x10 << 3));
-      opcode |= ((val & 0xf) << 8);
-      opcode |= ((val & 0x10) << 3);
+      //opcode |= ((val & 0xf) << 8);
+      //opcode |= ((val & 0x10) << 3);
       break;
 
     case BFD_RELOC_TRICORE_4POS:
@@ -8380,7 +8392,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= ((val & 0xf) << 12);
+      //opcode |= ((val & 0xf) << 12);
       break;
 
     case BFD_RELOC_TRICORE_5POS3:
@@ -8390,8 +8402,8 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~((0xf << 12) | (0x10 << 3));
-      opcode |= ((val & 0xf) << 12);
-      opcode |= ((val & 0x10) << 3);
+      //opcode |= ((val & 0xf) << 12);
+      //opcode |= ((val & 0x10) << 3);
       break;
 
     case BFD_RELOC_TRICORE_4OFF:
@@ -8401,7 +8413,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= (val << 12);
+      //opcode |= (val << 12);
       break;
 
     case BFD_RELOC_TRICORE_4OFF2:
@@ -8416,7 +8428,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= (val << 11);
+      //opcode |= (val << 11);
       break;
 
     case BFD_RELOC_TRICORE_4OFF4:
@@ -8433,7 +8445,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 12);
-      opcode |= (val << 10);
+      //opcode |= (val << 10);
       break;
 
     case BFD_RELOC_TRICORE_42OFF:
@@ -8443,7 +8455,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 8);
-      opcode |= (val << 8);
+      //opcode |= (val << 8);
       break;
 
     case BFD_RELOC_TRICORE_42OFF2:
@@ -8458,7 +8470,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 8);
-      opcode |= (val << 7);
+      //opcode |= (val << 7);
       break;
 
     case BFD_RELOC_TRICORE_42OFF4:
@@ -8475,7 +8487,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xf << 8);
-      opcode |= (val << 6);
+      //opcode |= (val << 6);
       break;
 
     case BFD_RELOC_TRICORE_2OFF:
@@ -8502,7 +8514,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	  break;
 	}
       opcode &= ~(0xff << 8);
-      opcode |= (val << 6);
+      //opcode |= (val << 6);
       break;
 
     case BFD_RELOC_TRICORE_GOT:
@@ -8537,7 +8549,37 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 
   /* Write back the fixed-up insn.  */
   md_number_to_chars (buf, opcode, len32 ? 4 : 2);
-  fixP->fx_done = 1;
+  fixP->fx_done = 0;
+  if (reloc == BFD_RELOC_TRICORE_24REL || reloc == BFD_RELOC_TRICORE_15REL || 1)
+  {
+	  /*
+    fixP->fx_addnumber = 0;
+    static unsigned int idx = 0;
+    size_t len = 32;
+    char *sname = alloca (len);
+    snprintf (sname, len, "*LOC%d*", idx++);
+    symbolS *sym = symbol_find_or_make (sname);
+    S_SET_SEGMENT (sym, segment);
+    S_SET_VALUE (sym, (valueT) (fixP->fx_frag->fr_address + fixP->fx_where + *valP)); 
+    */
+    fixP->fx_addnumber = fixP->fx_frag->fr_address + fixP->fx_where + *valP;
+    size_t len = 32;
+    char *sname = alloca (len);
+    snprintf (sname, len, "*LOC_%s*", segment->name);
+    symbolS *sym = symbol_find_or_make (sname);
+    S_SET_SEGMENT (sym, segment);
+    S_SET_VALUE (sym, (valueT) 0);	 
+   
+    fixP->fx_addsy = sym;
+  }
+
+  else
+  {
+    fixP->fx_addnumber = *valP;
+    symbolS *sym = symbol_find_or_make ("*ABS*");
+    fixP->fx_addsy = sym;
+  }
+
 
   if (show_internals)
     {

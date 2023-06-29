@@ -7185,6 +7185,11 @@ to relocate all non-register operands.  */
   BFD_RELOC_TRICORE_16ABS,
   BFD_RELOC_TRICORE_1BIT,
   BFD_RELOC_TRICORE_3POS,
+  BFD_RELOC_TRICORE_PCPHI,
+  BFD_RELOC_TRICORE_PCPLO,
+  BFD_RELOC_TRICORE_PCPPAGE,
+  BFD_RELOC_TRICORE_PCPOFF,
+  BFD_RELOC_TRICORE_PCPTEXT,
   BFD_RELOC_TRICORE_5POS,
   BFD_RELOC_TRICORE_5POS2,
   BFD_RELOC_TRICORE_BRCC,
@@ -7250,6 +7255,8 @@ the linker to optimize virtual tables (C++).  */
 /* This supports 32-bit absolute address with low 14-bit zero  */
   BFD_RELOC_TRICORE_18ABS_14,
 
+/* This tags indirect jumps  */
+  BFD_RELOC_TRICORE_INDIRECT,
 
 /* Linux eBPF relocations.  */
   BFD_RELOC_BPF_64,

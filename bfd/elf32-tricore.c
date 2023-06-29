@@ -635,9 +635,8 @@ static reloc_howto_type tricore_elf32_howto_table[] =
 	 0,			/* src_mask */
 	 0x001f0000,		/* dst_mask */
 	 false),		/* pcrel_offset */
-#if 0
-  TODO
-  / PCP HI relocation.  /
+
+  /* PCP HI relocation.  */
   HOWTO (R_TRICORE_PCPHI,	/* type */
 	 1,			/* rightshift */
 	 1,			/* size (0 = byte, 1 = short, 2 = long) */
@@ -711,7 +710,6 @@ static reloc_howto_type tricore_elf32_howto_table[] =
 	 0,			/* src_mask */
 	 0xffff,		/* dst_mask */
 	 false),		/* pcrel_offset */
-#endif
 
   /* bitP2 5 bit bit position.  */
   HOWTO (R_TRICORE_5POS2,	/* type */
@@ -1491,7 +1489,23 @@ static reloc_howto_type tricore_elf32_howto_table[] =
 	 false,			/* partial_inplace */
 	 0,			/* src_mask */
 	 0xf3fff000,		/* dst_mask */
-	 false) 		/* pcrel_offset */
+	 false), 		/* pcrel_offset */
+
+  /* No relocation (ignored).  */
+  HOWTO (R_TRICORE_INDIRECT,    /* type */
+         0,                     /* rightshift */
+         0,                     /* size (0 = byte, 1 = short, 2 = long) */
+         0,                     /* bitsize */
+         false,                 /* pc_relative */
+         0,                     /* bitpos */
+         complain_overflow_dont,/* complain_on_overflow */
+         bfd_elf_generic_reloc, /* special_function */
+         "R_TRICORE_INDIRECT",  /* name */
+         false,                 /* partial_inplace */
+         0,                     /* src_mask */
+         0,                     /* dst_mask */
+         false)                 /* pcrel_offset */
+
 
 };
 
@@ -1529,12 +1543,11 @@ static const struct elf_reloc_map tricore_reloc_map[] =
   {BFD_RELOC_TRICORE_1BIT,      R_TRICORE_1BIT},
   {BFD_RELOC_TRICORE_3POS,      R_TRICORE_3POS},
   {BFD_RELOC_TRICORE_5POS,      R_TRICORE_5POS},
-/* TODO  {BFD_RELOC_TRICORE_PCPHI,     R_TRICORE_PCPHI},
+  {BFD_RELOC_TRICORE_PCPHI,     R_TRICORE_PCPHI},
   {BFD_RELOC_TRICORE_PCPLO,     R_TRICORE_PCPLO},
   {BFD_RELOC_TRICORE_PCPPAGE,   R_TRICORE_PCPPAGE},
   {BFD_RELOC_TRICORE_PCPOFF,    R_TRICORE_PCPOFF},
   {BFD_RELOC_TRICORE_PCPTEXT,   R_TRICORE_PCPTEXT},
-  */
   {BFD_RELOC_TRICORE_5POS2,     R_TRICORE_5POS2},
   {BFD_RELOC_TRICORE_BRCC,      R_TRICORE_BRCC},
   {BFD_RELOC_TRICORE_BRCZ,      R_TRICORE_BRCZ},
@@ -1586,7 +1599,8 @@ static const struct elf_reloc_map tricore_reloc_map[] =
   {BFD_RELOC_TRICORE_SBREG_S2, R_TRICORE_SBREG_S2},
   {BFD_RELOC_TRICORE_SBREG_S1, R_TRICORE_SBREG_S1},
   {BFD_RELOC_TRICORE_SBREG_D,  R_TRICORE_SBREG_D},
-  {BFD_RELOC_TRICORE_18ABS_14,  R_TRICORE_18ABS_14}
+  {BFD_RELOC_TRICORE_18ABS_14,  R_TRICORE_18ABS_14},
+  {BFD_RELOC_TRICORE_INDIRECT,  R_TRICORE_INDIRECT},
 };
 
 static int nr_maps = sizeof tricore_reloc_map / sizeof tricore_reloc_map[0];
@@ -1734,6 +1748,9 @@ static enum elf_reloc_type_class tricore_elf32_reloc_type_class
 const char * tricore_elf32_get_core_name_from_id
      (unsigned int coreid);
 
+static bool
+tricore_elf32_relax_delete_bytes
+     (bfd *abfd, asection *sec, bfd_byte *contents, Elf_Internal_Rela *irel, bfd_vma addr, bfd_vma sym_val, int count);     
      
 static reloc_howto_type *
 tricore_elf_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
@@ -2688,7 +2705,7 @@ tricore_elf32_relocate_section (bfd *output_bfd,
 	  bitpos_seen = false;
 	  continue;
 	}
-      else if (r_type == R_TRICORE_NONE)
+      else if (r_type == R_TRICORE_NONE || r_type == R_TRICORE_INDIRECT)
         {
 	  /* This relocation type is typically caused by the TriCore-specific
 	     relaxation pass, either because it has changed R_TRICORE_BITPOS
@@ -2865,13 +2882,16 @@ tricore_elf32_relocate_section (bfd *output_bfd,
 	}
 
       /* If PC-relative, adjust the relocation value appropriately.  */
+      // printf("# %s %d %d\n", howto->name, howto->pc_relative, !rel_abs);
       if (howto->pc_relative && !rel_abs)
         {
           relocation -= (input_section->output_section->vma
                          + input_section->output_offset);
           if (howto->pcrel_offset)
             relocation -= offset;
+	  //printf(" -> ok\n");
         }
+      // printf("relocation = %x + %x (%x)\n", relocation, addend, offset+input_section->output_section->vma + input_section->output_offset);
 
       /* Add the r_addend field.  */
       relocation += addend;
@@ -4934,7 +4954,7 @@ tricore_elf32_relax_section (bfd *abfd,
 {
   Elf_Internal_Shdr *symtab_hdr;
   Elf_Internal_Rela *internal_relocs = NULL;
-  Elf_Internal_Rela *irel, *irelend;
+  Elf_Internal_Rela *irel, *irelend, *irelnext;
   bfd_byte *contents = NULL;
   Elf_Internal_Sym *isymbuf = NULL;
   static bool initialized = false;
@@ -5297,8 +5317,7 @@ tricore_elf32_relax_section (bfd *abfd,
   /* If requested, check whether all call and jump instructions can reach
      their respective target addresses.  We don't have to do anything for a
      relocateable link, or if this section doesn't contain code or relocs.  */
-  if (!tricore_elf32_relax_24rel
-      || bfd_link_relocatable(info) 
+  if (bfd_link_relocatable(info) 
       || ((sec->flags & SEC_CODE) == 0)
       || ((sec->flags & SEC_RELOC) == 0)
       || (sec->reloc_count == 0))
@@ -5340,6 +5359,20 @@ tricore_elf32_relax_section (bfd *abfd,
   if (internal_relocs == NULL)
     goto error_return;
 
+  /* */
+  bool can_delete_insn = true;
+  irelend = internal_relocs + sec->reloc_count;
+  for (irel = internal_relocs; irel < irelend; irel++)
+  {
+    long r_type = ELF32_R_TYPE (irel->r_info);
+    if (r_type == R_TRICORE_INDIRECT)
+    {
+      can_delete_insn = false;
+      break;
+    }
+  }
+   //printf("CURRENT STATUS DELETE FOR %s  = %d\n", sec->name, can_delete_insn);
+
   /* Walk through the relocs looking for call/jump targets.  */
   irelend = internal_relocs + sec->reloc_count;
   for (irel = internal_relocs; irel < irelend; irel++)
@@ -5357,7 +5390,8 @@ tricore_elf32_relax_section (bfd *abfd,
   	  || (r_type >= R_TRICORE_max))
 	goto error_return;
 
-      if (r_type != R_TRICORE_24REL)
+
+      if (r_type != R_TRICORE_24REL && r_type != R_TRICORE_HIADJ )
 	continue;
 
       r_index = ELF32_R_SYM (irel->r_info);
@@ -5398,6 +5432,7 @@ tricore_elf32_relax_section (bfd *abfd,
            + bsec->output_section->vma
            + bsec->output_offset
            + irel->r_addend;
+	  //if(r_type == R_TRICORE_24REL) printf("#### 1sym_Val = %x\n", sym_val);
 	}
       else
         {
@@ -5419,7 +5454,151 @@ tricore_elf32_relax_section (bfd *abfd,
            + h->root.u.def.section->output_section->vma
            + h->root.u.def.section->output_offset
            + irel->r_addend;
+	  //if(r_type == R_TRICORE_24REL) printf("#### 2 sym_Val = %x, %s\n", sym_val, sym_name);
         }
+
+/*      
+#define OFF18(val, field2) (((((val)>>6) & 0xf) << 28) | \
+		            ((field2 & 0x3) << 26) | \
+		            ((((val)>>10) & 0xf) << 22) | \
+		            (((val) & 0x3f) << 16) | \
+		            ((((val)>>28) & 0xf) << 12) )
+  */
+#define OFF18(relocation, field2) (((relocation & 0x3f) << 16) | \
+                            ((field2 & 0x3) << 26) | \
+                            ((relocation & 0x3c0) << 22) | \
+                            ((relocation & 0x3c00) << 12) | \
+                            ((relocation & 0xf0000000) >> 16) )
+
+#define ABS_ADDR_INSN(insn, off18, op) ((off18) | \
+		                        ((((insn) >> 8) & 0xf) << 8) | \
+		                        ((op) & 0xff))
+ 
+        /* Check if the value is representable with the 18ABS format. */
+      if ((r_type == R_TRICORE_HIADJ) && !(sym_val & 0x0fffc000) && can_delete_insn & false)
+      {
+	int applied = 0;
+	int count = 0;
+	int found = 0;
+	int current_offset = irel->r_offset;
+	for (irelnext = irel+1; irelnext < irelend; irelnext++)
+	{
+		unsigned long reg;
+
+		if (irelnext->r_offset != current_offset + 4) break;
+		current_offset = irelnext->r_offset;
+
+		if (ELF32_R_TYPE (irelnext->r_info) == R_TRICORE_HIADJ &&
+		    ELF32_R_SYM (irel->r_info) == ELF32_R_SYM (irelnext->r_info) &&
+		    irel->r_addend == irelnext->r_addend)
+			break;
+
+		if (ELF32_R_TYPE (irelnext->r_info) != R_TRICORE_LO2 || 
+		    ELF32_R_SYM (irel->r_info) != ELF32_R_SYM (irelnext->r_info) ||
+		    irel->r_addend != irelnext->r_addend)
+			continue;
+
+		/* Get the instruction. */
+		insn = bfd_get_32 (abfd, contents + irelnext->r_offset);
+		reg = (insn & 0xf0000000) >> 24;
+		count++;
+
+		/* Load instructions supporting the 18ABS format. */
+		/*
+		if (((insn & 0xff) == 0x19)) // lw.w
+		{
+		        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x00), 0x85);
+			found = 1;
+		}
+		else if (((insn & 0xff) == 0x99)) // ld.b
+                {
+			insn = ABS_ADDR_INSN(insn, OFF18(0, 0x02), 0x85);
+			found = 1;
+                }
+		*/
+		if (((insn & 0xff) == 0x79)) // ld.a
+                {
+			insn = ABS_ADDR_INSN(insn, OFF18(0, 0x00), 0x05);
+			found = 1;
+                }
+		/*
+		else if (((insn & 0xff) == 0x39)) //ld.bu
+                {
+			insn = ABS_ADDR_INSN(insn, OFF18(0, 0x01), 0x05);
+			found = 1;
+                }
+		else if (((insn & 0xff) == 0xc9)) // ld.h
+                {
+			insn = ABS_ADDR_INSN(insn, OFF18(0, 0x02), 0x05);
+			found = 1;
+                }
+		else if (((insn & 0xff) == 0xb9)) // ld.hu
+                {
+			insn = ABS_ADDR_INSN(insn, OFF18(0, 0x03), 0x05);
+			found = 1;
+                }
+		*/
+
+		/* Store instructions supporting the 18ABS format. */
+		/*
+		else if (((insn & 0xff) == 0x59)) // st.w
+                {
+                        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x00), 0xa5);
+                        found = 1;
+                }*/
+		else if (((insn & 0xff) == 0xb5)) // st.a
+                {
+                        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x02), 0xa5);
+                        found = 1;
+                }
+		/*
+		else if (((insn & 0xff) == 0xe9))
+                {
+                        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x00), 0x25);
+                        found = 1;
+                }
+		else if (((insn & 0xff) == 0xf9))
+                {
+                        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x02), 0x25);
+                        found = 1;
+                }
+		*/
+
+		/* LEA instruction supporting the 18ABS format */
+                else if (((insn & 0xff) == 0xd9))
+                {
+                        insn = ABS_ADDR_INSN(insn, OFF18(0, 0x00), 0xc5);
+                        found = 1;
+                }
+
+		if (found)
+		{
+			if (reg != ((insn & 0x00000f00) >> 8)) break;
+			pin_internal_relocs(sec, internal_relocs);
+			pin_contents(sec, contents);
+			bfd_put_32 (abfd, insn, contents + irelnext->r_offset);
+                        irelnext->r_info = ELF32_R_INFO (ELF32_R_SYM (irelnext->r_info), R_TRICORE_18ABS);
+                        *again = true;
+                        applied++;
+			found = 0;
+		}
+
+	}
+
+	if (applied && applied == count)
+	{
+		int symidx = ELF32_R_SYM ((irel)->r_info);
+		isymbuf = retrieve_local_syms(abfd);
+		Elf_Internal_Sym *isym = isymbuf + symidx;
+		//printf("[%d / %d]Valore simbolo: %x (%x) -> %x\n", symidx, symtab_hdr->sh_info, isym->st_value, irel->r_addend, sym_val);
+		tricore_elf32_relax_delete_bytes (abfd, sec, contents, irel, irel->r_offset, sym_val, 4);
+        	irel->r_info = R_TRICORE_NONE;
+  	}
+
+	continue;
+      }
+      else if (r_type == R_TRICORE_HIADJ) continue;
+
       pc = irel->r_offset + sec->output_section->vma + sec->output_offset;
 
       /* If the target address can be reached directly or absolutely, or if
@@ -5935,6 +6114,212 @@ tricore_elf32_merge_symbol_attribute(struct elf_link_hash_entry *h,
       h->other = other | ELF_ST_VISIBILITY (h->other);
     }
   h->other |= ELF_STO_WRITE_CORE_NUMBER(ELF_STO_READ_CORE_NUMBER(st_other));
+}
+
+static bool
+tricore_elf32_relax_delete_bytes (bfd *abfd, asection *sec, bfd_byte *contents, Elf_Internal_Rela *irel, bfd_vma addr, bfd_vma sym_val, int count)
+{
+  Elf_Internal_Shdr *symtab_hdr;
+  unsigned int sec_shndx;
+  //bfd_byte *contents;
+  Elf_Internal_Rela /**irel,*/ *irelend;
+  Elf_Internal_Sym *isym;
+  Elf_Internal_Sym *isymend;
+  bfd_vma toaddr;
+  struct elf_link_hash_entry **sym_hashes;
+  struct elf_link_hash_entry **sym_hashes2;
+  struct elf_link_hash_entry **end_hashes;
+  unsigned int symcount;
+
+  sec_shndx = _bfd_elf_section_from_bfd_section (abfd, sec);
+
+  contents = elf_section_data (sec)->this_hdr.contents;
+
+  toaddr = sec->size;
+
+  irel = elf_section_data (sec)->relocs;
+  irelend = irel + sec->reloc_count;
+
+  /* Actually delete the bytes.  */
+  memmove (contents + addr, contents + addr + count,
+           (size_t) (toaddr - addr - count));
+  sec->size -= count;
+
+  /* Adjust all the relocs.  */
+  int i1 = 0;
+  bool modified;
+  bool inrange;
+  for (irel = elf_section_data (sec)->relocs; irel < irelend; irel++)
+    {
+        modified = false;
+
+        //inrange = (irel->r_offset + irel->r_addend  > addr) 
+	//       && (irel->r_offset + irel->r_addend <= toaddr);
+        inrange = (irel->r_addend  >= addr)
+             && (irel->r_addend <= toaddr);	       
+
+        /* Get the new reloc address.  */
+        if ((irel->r_offset > addr
+           && irel->r_offset <= toaddr))
+        {
+          //printf("Modify relocation with offset = %x (%x)\n", irel->r_offset, irel->r_offset+sec->output_section->vma + sec->output_offset);
+          irel->r_offset -= count;
+	  modified = true;
+        }
+
+      int symidx = ELF32_R_SYM (irel->r_info);      
+      symtab_hdr = &elf_tdata (abfd)->symtab_hdr;
+      if (symidx < symtab_hdr->sh_info)
+      {
+        isym = retrieve_local_syms(abfd) + symidx;
+	/*
+	char *sname = 0;
+        if (isym->st_name != 0)
+          sname = (bfd_elf_string_from_elf_section
+                    (abfd, symtab_hdr->sh_link, isym->st_name));
+        if (sname == NULL)
+            sname = "<unknown local>";
+        printf("[%d / %d] %s st_value = %x+%x, addr = %x, sec_end = %x\n", 
+                symidx, ELF32_R_TYPE (irel->r_info) == R_TRICORE_24REL, sname, isym->st_value,irel->r_addend, addr, toaddr);
+	*/
+        if (isym->st_shndx == sec_shndx
+            && isym->st_value <= addr
+            && isym->st_value + irel->r_addend  > addr
+            && isym->st_value + irel->r_addend <= toaddr)
+        {
+          irel->r_addend -= count;
+	  //irel->r_addend += (irel->r_addend & 0x80000000? count: -count);
+        }
+	if (isym->st_shndx == sec_shndx
+            && isym->st_value + irel->r_addend <= addr
+            && isym->st_value  > addr
+            && isym->st_value <= toaddr)
+        {
+          irel->r_addend += count;
+          //irel->r_addend += (irel->r_addend & 0x80000000? count: -count);
+        }
+
+      }
+      else
+      {
+	struct elf_link_hash_entry *sym_hash = elf_sym_hashes (abfd)[symidx - symtab_hdr->sh_info];
+/*
+	printf("@@@@ [%d]  %d, %d, %s, (%d  %d), %x, %x, %x (%x) in [%x - %x]\n", i1++,
+			symidx - symtab_hdr->sh_info, 
+			sym_hash->root.u.def.section == sec, 
+                        sym_hash->root.root.string,
+			modified, inrange,
+			sym_hash->root.u.def.value, 
+			irel->r_addend,
+                        irel->r_offset+irel->r_addend, irel->r_addend,
+			addr,
+			toaddr);
+*/
+        if (sym_hash->root.u.def.section == sec
+            && sym_hash->root.u.def.value <= addr
+            && sym_hash->root.u.def.value + irel->r_addend  > addr
+            && sym_hash->root.u.def.value + irel->r_addend <= toaddr)
+        {
+          //printf("%s --\n", sym_hash->root.root.string);
+          irel->r_addend -= count;
+        }
+        if (sym_hash->root.u.def.section == sec
+            && sym_hash->root.u.def.value + irel->r_addend <= addr
+            && sym_hash->root.u.def.value  > addr
+            && sym_hash->root.u.def.value <= toaddr)
+        {
+          irel->r_addend += count;
+        }
+
+      }
+    }
+
+  /* Adjust the local symbols defined in this section.  */
+  symtab_hdr = &elf_tdata (abfd)->symtab_hdr;
+  isym = (Elf_Internal_Sym *) retrieve_local_syms(abfd);
+  isymend = isym + symtab_hdr->sh_info;
+  int index = 0;
+  for (; isym < isymend; isym++)
+    {
+	    /*
+      char *sname = 0;
+      if (isym->st_name != 0)
+        sname = (bfd_elf_string_from_elf_section
+                 (abfd, symtab_hdr->sh_link, isym->st_name));
+      if (sname == NULL)
+        sname = "<unknown local>";
+      printf("local symbol %d %s (value = %x, size = %x) \n", index++, sname, isym->st_value, isym->st_size);
+      */
+      if (isym->st_shndx == sec_shndx
+          && isym->st_value > addr
+          && isym->st_value <= toaddr)
+      {
+        isym->st_value -= count;
+//	printf("->modificare!\n");
+      }
+      /* If the symbol *spans* the bytes we just deleted (i.e. its
+             *end* is in the moved bytes but its *start* isn't), then we
+             must adjust its size.
+
+             This test needs to use the original value of st_value, otherwise
+             we might accidentally decrease size when deleting bytes right
+             before the symbol.  But since deleted relocs can't span across
+             symbols, we can't have both a st_value and a st_size decrease,
+             so it is simpler to just use an else.  */
+          else if (isym->st_value <= addr
+                   && isym->st_value + isym->st_size > addr
+                   && isym->st_value + isym->st_size <= toaddr)
+            isym->st_size -= count;
+    }
+
+  /* Now adjust the global symbols defined in this section.  */
+  symcount = (symtab_hdr->sh_size / sizeof (Elf32_External_Sym)
+              - symtab_hdr->sh_info);
+  sym_hashes = elf_sym_hashes (abfd);
+  end_hashes = sym_hashes + symcount;
+  //printf("-----> %d\n", symcount);
+  for (; sym_hashes < end_hashes; sym_hashes++)
+    {
+      struct elf_link_hash_entry *sym_hash = *sym_hashes;
+      bool go_ahead = false;
+      for (sym_hashes2 = sym_hashes+1; sym_hashes2 < end_hashes; sym_hashes2++)
+      {
+        if (!strcmp(sym_hash->root.root.string, (*sym_hashes2)->root.root.string))
+        {
+	  go_ahead = true;
+	  break;
+	}
+      }
+      if (go_ahead) continue;
+
+       //printf("symbol %s %d %d\n", sym_hash->root.root.string, bfd_link_hash_defined, bfd_link_hash_defined);
+       if (/*(sym_hash->root.type == bfd_link_hash_defined
+            || sym_hash->root.type == bfd_link_hash_defweak)
+           &&*/ sym_hash->root.u.def.section == sec)
+	{
+	  //printf("->symbol %s\n", sym_hash->root.root.string);
+
+  	  /* As above, adjust the value if needed.  */
+  	  if (sym_hash->root.u.def.value > addr
+      	      && sym_hash->root.u.def.value <= toaddr)
+	  {
+            sym_hash->root.u.def.value -= count;
+	    //printf("adjust %s\n", sym_hash->root.root.string);
+	  }
+
+          /* As above, adjust the size if needed.  */
+          else if (sym_hash->root.u.def.value <= addr
+                   && sym_hash->root.u.def.value + sym_hash->size > addr
+                   && sym_hash->root.u.def.value + sym_hash->size <= toaddr)
+          {  
+            sym_hash->size -= count;
+            //printf("adjust end %s\n", sym_hash->root.root.string);
+          }
+
+        }
+    }
+
+  return true;
 }
 
 #define elf_backend_special_sections 		tricore_elf32_special_sections

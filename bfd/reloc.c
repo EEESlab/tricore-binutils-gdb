@@ -4429,6 +4429,10 @@ ENUM
 ENUMDOC
   This supports 32-bit absolute address with low 14-bit zero
 
+ENUM
+  BFD_RELOC_TRICORE_INDIRECT
+ENUMDOC
+  This tags indirect jumps.
 
 ENUM
   BFD_RELOC_V850_9_PCREL
