@@ -95,6 +95,7 @@ const char *md_shortopts = "VYm:";
 #define OPTION_INSN32_PREF	(OPTION_MD_BASE + 2)
 #define OPTION_ENFORCE_ALIGN	(OPTION_MD_BASE + 3)
 #define OPTION_WARN_CRC32       (OPTION_MD_BASE + 4)
+#define OPTION_RELOC_ASM        (OPTION_MD_BASE + 5)
 
 struct option md_longopts[] =
 {
@@ -103,6 +104,7 @@ struct option md_longopts[] =
   {"insn32-preferred", no_argument, NULL, OPTION_INSN32_PREF},
   {"enforce-aligned-data", no_argument, NULL, OPTION_ENFORCE_ALIGN},
   {"warn-crc32-syntax", no_argument, NULL, OPTION_WARN_CRC32},
+  {"no-reloc", no_argument, NULL, OPTION_RELOC_ASM},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -268,6 +270,9 @@ static int workaround_dmi12 = 0;
 
 static int warn_crc32_insn = 0;
 
+/* 1 means generate relocs */
+
+static int reloc_asm = 1;
 
 /* Additional sections that can be defined using pseudo-ops.  */
 
@@ -1602,6 +1607,9 @@ md_parse_option (int c, const char *arg)
     case OPTION_WARN_CRC32:
       warn_crc32_insn = 1;
       break;
+    case OPTION_RELOC_ASM:
+      reloc_asm = 0;
+      break;
     }
 
   return 1;
@@ -2216,6 +2224,7 @@ TriCore-specific options:\n\
   --insn32-only		  use only 32-bit instructions (.code16 is ignored)\n\
   --insn32-preferred	  use only 32-bit instructions (.code16 is honored)\n\
   --enforce-aligned-data  force .hword/.word/etc. to be aligned correctly\n\
+  --no-reloc              force not to use relocs for locals\n\
   --warn-crc32-syntax     emit warning messages on all occurrences of crc32 instructions\n\
                           for manual syntax checking\n"));
 }
@@ -6771,6 +6780,48 @@ emit_code ()
 
   /* Emit fixups and relaxation infos if necessary.  */
   dont_relax = use_insn16  || (the_insn.code->format == TRICORE_FMT_B) ;
+  if (show_internals)  printf ("*** emit_code dont_relax=%d nops=%d format=%d code=%8.8lx\n",dont_relax,the_insn.nops,the_insn.code->format,the_insn.opcode );
+  if (reloc_asm==1)
+    {
+      int ins_reloc;
+      ins_reloc=0;
+      //is ret16, see also md_apply_fix for insn which are getting potentially relaxed and resized
+      if ((the_insn.nops==0) && (the_insn.code->format==32) && (the_insn.opcode==0x00009000))
+        {
+          ins_reloc=1;
+        }
+      //fret
+      if ((the_insn.nops==0) && (the_insn.code->format==32) && (the_insn.opcode==0x00007000))
+        {
+          ins_reloc=1;
+        }
+      //ret32
+      if ((the_insn.nops==0) && (the_insn.code->format==24) && (the_insn.opcode==0x0180000d))
+        {
+          ins_reloc=1;
+        }
+      //calli
+      if ((the_insn.nops==1) && (the_insn.code->format==15) && ((the_insn.opcode & 0xFFFFF0FF)==0x0000002d))
+        {
+          ins_reloc=1;
+        }
+      //fcalli
+      if ((the_insn.nops==1) && (the_insn.code->format==15) && ((the_insn.opcode & 0xFFFFF0FF)==0x0010002d))
+        {
+          ins_reloc=1;
+        }
+
+      if (ins_reloc==1)
+      {
+          frag_now->fr_fix = 2; //2byte
+          frag_now->fr_var = 0;
+          fixS *new_fix;
+          new_fix = fix_new (frag_now,  (pfrag - frag_now->fr_literal), 0, frag_now->fr_symbol,
+                               frag_now->fr_offset, 0, BFD_RELOC_TRICORE_RELAX);
+          new_fix->fx_file = frag_now->fr_file;
+          new_fix->fx_line = frag_now->fr_line;
+        }
+    }
   for (i = 0; i < the_insn.nops; ++i)
     {
       if (the_insn.ops[i] != 'U')
@@ -6793,7 +6844,8 @@ emit_code ()
     	    printf ("*** fix_new_exp (%d, %s)\n", i, GET_RELOC_NAME (reloc));
 	  continue;
 	}
-
+      if (reloc_asm==0)
+        {
       /* This is a PC-relative jump/call insn; prepare it for relaxing.  */
       switch (the_insn.code->format)
 	{
@@ -6857,6 +6909,73 @@ emit_code ()
 	      	    fmt_name[the_insn.code->format]);
 	  break;
 	}
+        }
+      else
+        {
+          /* This is a PC-relative jump/call insn; prepare it for relaxing.  */
+          switch (the_insn.code->format)
+            {
+            case TRICORE_FMT_SB:
+              if (the_insn.code->nr_operands == 1)
+                state = RELAX_SB2+1;
+              else
+                state = RELAX_SB+1;
+              break;
+
+            case TRICORE_FMT_SBR:
+              if (the_insn.is_loop)
+                state = RELAX_LOOP+1;
+              else if (the_insn.code->args[i] == 'x')
+                state = RELAX_SBR2+1;
+              else
+                state = RELAX_SBR+1;
+              break;
+
+            case TRICORE_FMT_SBC:
+              if (the_insn.code->args[i] == 'x')
+                state = RELAX_SBC2+1;
+              else
+                state = RELAX_SBC+1;
+              break;
+
+            case TRICORE_FMT_SBRN:
+              state = RELAX_SBRN+1;
+              break;
+
+            case TRICORE_FMT_BRN:
+              state = RELAX_BRN;
+              break;
+
+            case TRICORE_FMT_BRR:
+            case TRICORE_FMT_BRC:
+              if (the_insn.is_loop)
+                {
+                  if (use_insn32 || big_insns || big_insns_only)
+                    state = RELAX_BLOOP2;
+                  else
+                    state = RELAX_BLOOP;
+                }
+              else if (!strcmp (the_insn.code->name, "jned")
+                  || !strcmp (the_insn.code->name, "jnei"))
+                {
+                  if (use_insn32 || big_insns || big_insns_only)
+                    state = RELAX_JNEX2;
+                  else
+                    state = RELAX_JNEX;
+                }
+              else if (!strcmp (the_insn.code->name, "loopu"))
+                state = RELAX_LOOPU;
+              else
+                state = RELAX_BRX;
+              break;
+
+            default:
+              as_fatal (_("Internal error: attempt to relax format <%s> "
+                          "in emit_code"),
+                        fmt_name[the_insn.code->format]);
+              break;
+            }
+        }
 
       /* We already have allocated space in the current frag to hold
          this insn's opcode (this was done by calling frag_more above).
@@ -7950,6 +8069,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
   enum bfd_reloc_code_real reloc = fixP->fx_r_type;
   long val;
   int len32;
+  bfd_boolean relaxable = FALSE;
 #define WHERE fixP->fx_file, fixP->fx_line
 #define CHECK_DISPLACEMENT(off,min,max)					\
   if ((off) & 1)							\
@@ -7985,6 +8105,20 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
     printf ("*** md_apply_fix (%lx, %s#%d, %s)\n", (valueT) buf,
             fixP->fx_file, fixP->fx_line, GET_RELOC_NAME (reloc));
 
+  if ((!fixP->fx_addsy) && (reloc_asm==1))
+    {
+      if (fixP != NULL && abs_section_sym == NULL)
+        abs_section_sym = section_symbol (segment);
+      fixP->fx_addsy = abs_section_sym;
+      symbol_mark_used_in_reloc (fixP->fx_addsy);
+      if (show_internals)
+        {
+          printf ("*** md_apply_fix has no fx_addsy (%lx, %s#%d, %s) %8.8lx \n", (valueT) buf,
+                  fixP->fx_file, fixP->fx_line, GET_RELOC_NAME (reloc),S_GET_VALUE (fixP->fx_addsy));
+        }
+    }
+
+
   if (fixP->fx_addsy)
     {
       if (fixP->fx_pcrel
@@ -7997,6 +8131,11 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	     the symbol plus the optional offset, and the luser
 	     who committed this sequence is, well, gaga.  :-)  */
 	  val = fixP->fx_offset + S_GET_VALUE (fixP->fx_addsy);
+	      if (show_internals)
+	        {
+	          printf ("*** md_apply_fix has fx_addsy & fx_prel (%lx, %s#%d, %s) %8.8lx \n", (valueT) buf,
+	                  fixP->fx_file, fixP->fx_line, GET_RELOC_NAME (reloc),S_GET_VALUE (fixP->fx_addsy));
+	        }
 	}
       else if (fixP->fx_subsy
       	       && (S_GET_SEGMENT (fixP->fx_subsy)
@@ -8015,6 +8154,11 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	}
       else
         {
+          if (show_internals)
+              {
+                printf ("*** md_apply_fix has relocation needed (%lx, %s#%d, %s) %8.8lx \n", (valueT) buf,
+                        fixP->fx_file, fixP->fx_line, GET_RELOC_NAME (reloc),S_GET_VALUE (fixP->fx_addsy));
+              }
           /* Relocation needed; remember *valP.  */
           fixP->fx_addnumber = *valP;
 
@@ -8028,6 +8172,22 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 	          }
 
 	  /* Turn absolute data relocations into pc-relative ones.  */
+	  relaxable = FALSE;
+          if ((reloc!=BFD_RELOC_TRICORE_RELAX) && (reloc_asm==1))
+            {
+              opcode = 0;
+              len32 = (*buf & 1);
+              if (len32)
+                opcode = bfd_getl32 (buf);
+              else
+                opcode = bfd_getl16 (buf);
+              //is call 24bitrel
+              if (opcode==0x0000006d) relaxable=TRUE; //Call
+              if (opcode==0x00000061) relaxable=TRUE; //fcall
+              if (opcode==0x000000ed) relaxable=TRUE; //calla
+              if (opcode==0x000000e1) relaxable=TRUE; //fcalla
+            }
+          if (show_internals)  printf ("*** md_apply_fix_code add relax info (%lx) relaxable=%d opcode=%8.8lx\n",(valueT) buf,relaxable,opcode );
           if (fixP->fx_pcrel)
 	    {
 	      switch (reloc)
@@ -8051,11 +8211,24 @@ md_apply_fix (fixS *fixP, valueT *valP, segT segment ATTRIBUTE_UNUSED)
 		  break;
 		}
 	    }
+            if (relaxable && (fixP->fx_addsy != NULL))
+            {
+              if (show_internals)  printf ("*** md_apply_fix_code adding relax info (%lx)\n",(valueT) buf);
+              fixP->fx_next = xmemdup (fixP, sizeof (*fixP), sizeof (*fixP));
+              fixP->fx_next->fx_addsy = fixP->fx_next->fx_subsy = NULL;
+              fixP->fx_next->fx_r_type = BFD_RELOC_TRICORE_RELAX;
+            }
+
           return;
 	}
     }
   else
     val = *valP;
+  if (reloc == BFD_RELOC_TRICORE_RELAX)
+    {
+      fixP->fx_done = 0;
+      return;
+    }
 
   if (reloc == BFD_RELOC_TRICORE_BITPOS)
     {

@@ -47,7 +47,11 @@ PARSE_AND_LIST_PROLOGUE='
 #define OPTION_RELAX_BDATA		301
 #define OPTION_RELAX_24REL		(OPTION_RELAX_BDATA + 1)
 #define OPTION_DEBUG_RELAX		(OPTION_RELAX_24REL + 1)
-#define OPTION_SORT_SDA			(OPTION_DEBUG_RELAX + 1)
+#define OPTION_NO_RELAX			(OPTION_DEBUG_RELAX + 1)
+#define OPTION_DISASS_REPORT	(OPTION_NO_RELAX + 1)
+#define OPTION_CALLINFO 		(OPTION_DISASS_REPORT + 1)
+#define OPTION_NOFCALLFRET		(OPTION_CALLINFO + 1)
+#define OPTION_SORT_SDA			(OPTION_NOFCALLFRET + 1)
 #define OPTION_MULTI_SDAS		(OPTION_SORT_SDA + 1)
 #define OPTION_PCP_MAP			(OPTION_MULTI_SDAS + 1)
 #define OPTION_DEBUG_PCPMAP		(OPTION_PCP_MAP + 1)
@@ -61,6 +65,15 @@ PARSE_AND_LIST_LONGOPTS='
   { "relax-bdata", no_argument, NULL, OPTION_RELAX_BDATA },
   { "relax-24rel", no_argument, NULL, OPTION_RELAX_24REL },
   { "debug-relax", no_argument, NULL, OPTION_DEBUG_RELAX },
+  { "no-relax", no_argument, NULL, OPTION_NO_RELAX },
+  { "nofcallfret", no_argument, NULL, OPTION_NOFCALLFRET },
+  { "disass-report", no_argument, NULL, OPTION_DISASS_REPORT },
+  { "callinfo", no_argument, NULL, OPTION_CALLINFO },
+#if 0
+  { "sort-sda", no_argument, NULL, OPTION_SORT_SDA },
+  { "multi-sdas", required_argument, NULL, OPTION_MULTI_SDAS },
+#endif
+  { "pcpmap", optional_argument, NULL, OPTION_PCP_MAP },
   { "debug-pcpmap", no_argument, NULL, OPTION_DEBUG_PCPMAP },
   { "check-sdata", no_argument, NULL, OPTION_CHECK_SDATA },
   { "mcpu", required_argument, NULL, OPTION_CORE_ARCH },
@@ -88,6 +101,18 @@ PARSE_AND_LIST_OPTIONS='
 			  data (i.e., whether they are accessed without\n\
 			  previously having been declared as small data).\n"
 		  ));
+  fprintf (file, _("\
+  --nofcallfret		Disable fcall/fret optimization.\n"
+		   ));		  
+  fprintf (file, _("\
+  --no-relax		Do not relax.\n"
+		   ));	
+  fprintf (file, _("\
+  --disass-error	Report Disassembly/Renaming fails.\n"
+		   ));
+  fprintf (file, _("\
+  --callinfo		Report function information.\n"
+		   ));			   	
   fprintf (file, _("\
   --mcpu=[core]		Link for TriCore architecture core.\n\
 					core may be one of:\n\
@@ -120,19 +145,34 @@ PARSE_AND_LIST_ARGS_CASES='
       tricore_elf32_relax_24rel = true;
       break;
 
-    case OPTION_DEBUG_RELAX:
+   case OPTION_DEBUG_RELAX:
       tricore_elf32_debug_relax = true;
       break;
 
+    case OPTION_NOFCALLFRET:
+      tricore_elf32_nofcallfret = true;
+      break;
+      
+    case OPTION_DISASS_REPORT:
+      tricore_elf32_disass_report = true;
+      break;  
+
+    case OPTION_CALLINFO:
+      tricore_elf32_callinfo_report = true;
+      break; 
+      
     case OPTION_CHECK_SDATA:
       tricore_elf32_check_sdata = true;
       break;
+
     case OPTION_CORE_ARCH:
       parse_arch_args(optarg);
       break;
+
     case OPTION_EXPORT_SYMS:
       parse_export_args(optarg);
       break;
+
     case OPTION_CORE_NUMBER:
       parse_core_number(optarg);
       break;
@@ -157,10 +197,15 @@ static void SDA_${EMULATION_NAME}_after_allocation (void);
 extern bool tricore_elf32_relax_bdata;
 extern bool tricore_elf32_relax_24rel;
 extern bool tricore_elf32_debug_relax;
+extern bool tricore_elf32_disass_report;
+extern bool tricore_elf32_callinfo_report;
+extern bool tricore_elf32_nofcallfret;
+
 extern void tricore_elf32_list_bit_objects (struct bfd_link_info *, FILE *);
 extern int tricore_elf32_pcpmap;
-extern bool tricore_elf32_debug_pcpmap;
-extern bool tricore_elf32_check_sdata;
+extern int tricore_relax_before_alloc;
+extern int tricore_elf32_debug_pcpmap;
+extern int tricore_elf32_check_sdata;
 extern unsigned long tricore_core_arch;
 extern void tricore_elf32_do_export_symbols(struct bfd_link_info *info);
 extern void tricore_elf32_set_core_number(unsigned int);
@@ -325,11 +370,18 @@ SDA_${EMULATION_NAME}_before_allocation ()
   /* Call main function; we're just extending it.  */
   gld${EMULATION_NAME}_before_allocation ();
 
-  if (! RELAXATION_DISABLED_BY_USER)
+  if (!bfd_link_relocatable (&link_info))
+  {
+      ENABLE_RELAXATION;
+  }
+
+  if (RELAXATION_ENABLED)
     tricore_elf32_relax_bdata = tricore_elf32_relax_24rel = true;
   else if (tricore_elf32_relax_bdata
   	   || tricore_elf32_relax_24rel)
     ENABLE_RELAXATION;
+
+    tricore_relax_before_alloc = 0;
 
   /* GNU ld supports relaxing in a very general sense, meaning it's
      completely up to the backend to decide what changes it wants to
@@ -383,10 +435,15 @@ SDA_${EMULATION_NAME}_before_allocation ()
 		      || !strncmp (isec->name, ".bdata.", 7)
 		      || !strcmp (isec->name, ".bbss")
 		      || !strncmp (isec->name, ".bbss.", 6)))
-                if (!bfd_relax_section (ibfd, isec, info, &again))
-		  xexit (1);
+		      {
+                tricore_relax_before_alloc = 1;
+                if (!bfd_relax_section (ibfd, isec, info, &again)) xexit (1);
+                tricore_relax_before_alloc = 0;
+              }
 	    }
     }
+    
+   link_info.relax_pass = 6;
 }
 
 EOF

@@ -239,6 +239,9 @@ START_RELOC_NUMBERS (elf32_tricore_reloc_type)
   /* support 32-bit absolute address with low 14-bit zero */
   RELOC_NUMBER (R_TRICORE_18ABS_14, 81)
 
+  /* Support for Tricore relaxation */
+  RELOC_NUMBER (R_TRICORE_RELAX, 82)
+
 END_RELOC_NUMBERS (R_TRICORE_max)
 
 #endif /* _ELF_TRICORE_H  */

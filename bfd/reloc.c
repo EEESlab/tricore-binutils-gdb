@@ -4278,6 +4278,22 @@ ENUMX
 ENUMDOC
   These are relocation types defined in the TriCore EABI.
 
+ENUM
+  BFD_RELOC_TRICORE_PCPHI
+ENUMX
+  BFD_RELOC_TRICORE_PCPLO
+ENUMX
+  BFD_RELOC_TRICORE_PCPPAGE
+ENUMX
+  BFD_RELOC_TRICORE_PCPOFF
+ENUMX
+  BFD_RELOC_TRICORE_PCPTEXT
+ENUMX
+  BFD_RELOC_TRICORE_PCPREL6
+ENUMX
+  BFD_RELOC_TRICORE_PCPREL10
+ENUMDOC
+  These are relocation types defined for TriCore's PCP co-processor.
 
 ENUM
   BFD_RELOC_TRICORE_HI
@@ -4429,6 +4445,10 @@ ENUM
 ENUMDOC
   This supports 32-bit absolute address with low 14-bit zero
 
+ENUM
+  BFD_RELOC_TRICORE_RELAX
+ENUMDOC
+  This supports Tricore relaxation 
 
 ENUM
   BFD_RELOC_V850_9_PCREL
