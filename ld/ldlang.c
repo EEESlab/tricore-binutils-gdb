@@ -1399,6 +1399,7 @@ lang_memory_region_lookup (const char *const name, bool create)
   new_region->not_flags = 0;
   new_region->not_cores = 0;
   new_region->had_full_message = false;
+  new_region->mirror = NULL;
 
   *lang_memory_region_list_tail = new_region;
   lang_memory_region_list_tail = &new_region->next;
