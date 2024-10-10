@@ -1,6 +1,7 @@
 /* extended map support for elf format
    Copyright  2011 Free Software Foundation, Inc.
    Contributed by Horst Lehser (Horst.Lehser@hightec-rt.com).
+   Extended by Domenico Iezzi (domenico@iezzi.info).
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -242,16 +243,13 @@ elf32_extmap_add_sym (struct bfd_link_hash_entry *entry, void * link_info ATTRIB
   return true;
 }
 
-/* The initial part of tricore_user_section_struct has to be identical with
-   fat_user_section_struct from ld.h  */
+/* The initial part of tricore_user_section_struct has to mimic
+   lang_output_section_statement_type from ld/ldlang.h. After 64 bytes,
+   we have a pointer to lang_memory_region_type, which contains the region name as first element */
 typedef struct tricore_user_section_struct {
-  void *head;
-  void *tail;
-  unsigned long count;
-  const char *region_name;
-  const flagword region_flags;
+  int unused[16];
+  const char **region_name;
 } tricore_section_userdata_type;
-
 
 void
 elf32_collect_extmap_info (struct bfd_link_info* info,
@@ -362,7 +360,7 @@ elf32_collect_extmap_info (struct bfd_link_info* info,
 	  tricore_section_userdata_type *ud;
           ud = bfd_section_userdata(sym->section->output_section);
           if (ud)
-            sym->region_name = ud->region_name;
+            sym->region_name = *ud->region_name;
           else
             sym->region_name = "NOREGION";
         }
