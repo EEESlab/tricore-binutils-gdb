@@ -247,7 +247,7 @@ elf32_extmap_add_sym (struct bfd_link_hash_entry *entry, void * link_info ATTRIB
    lang_output_section_statement_type from ld/ldlang.h. After 64 bytes,
    we have a pointer to lang_memory_region_type, which contains the region name as first element */
 typedef struct tricore_user_section_struct {
-  int unused[16];
+  int padding[16];
   const char **region_name;
 } tricore_section_userdata_type;
 
@@ -359,7 +359,7 @@ elf32_collect_extmap_info (struct bfd_link_info* info,
         {
 	  tricore_section_userdata_type *ud;
           ud = bfd_section_userdata(sym->section->output_section);
-          if (ud)
+          if (ud && ud->region_name)
             sym->region_name = *ud->region_name;
           else
             sym->region_name = "NOREGION";
