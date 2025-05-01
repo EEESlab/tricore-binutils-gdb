@@ -30,6 +30,9 @@
 #include "elf-bfd.h"
 #include "elf32-extmap.h"
 #include "elf/tricore.h"
+#include "ctf-api.h"
+#include "../ld/ldexp.h"
+#include "../ld/ldlang.h"
 
 /* If the linker was invoked with -M or -Map, we save the pointer to
    the map file in this variable; used to list allocated bit objects
@@ -243,14 +246,6 @@ elf32_extmap_add_sym (struct bfd_link_hash_entry *entry, void * link_info ATTRIB
   return true;
 }
 
-/* The initial part of tricore_user_section_struct has to mimic
-   lang_output_section_statement_type from ld/ldlang.h. After 64 bytes,
-   we have a pointer to lang_memory_region_type, which contains the region name as first element */
-typedef struct tricore_user_section_struct {
-  int padding[16];
-  const char **region_name;
-} tricore_section_userdata_type;
-
 void
 elf32_collect_extmap_info (struct bfd_link_info* info,
                            p_extmap_info extmap_inf,
@@ -357,10 +352,10 @@ elf32_collect_extmap_info (struct bfd_link_info* info,
         }
       else
         {
-	  tricore_section_userdata_type *ud;
+          lang_output_section_statement_type *ud;
           ud = bfd_section_userdata(sym->section->output_section);
-          if (ud && ud->region_name)
-            sym->region_name = *ud->region_name;
+          if (ud && ud->region && ud->region->name_list.name)
+            sym->region_name = ud->region->name_list.name;
           else
             sym->region_name = "NOREGION";
         }

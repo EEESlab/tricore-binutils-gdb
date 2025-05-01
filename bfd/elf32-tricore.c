@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #include "elf-bfd.h"
 #include "elf/tricore.h"
 #include "elf/elf32-tricore-disass.h"
+#include "ctf-api.h"
+#include "../ld/ldexp.h"
+#include "../ld/ldlang.h"
 
 /* The full name of the default instruction set architecture.  */
 
@@ -2140,18 +2143,18 @@ tricore_elf32_get_alternate_address(bfd_vma addr, unsigned int other,
 {
   memmap_t  *map;
   unsigned int core;
-  tricore_section_userdata_type *ud = NULL;
+  lang_output_section_statement_type *ud = NULL;
   flagword  sym_core = ELF_STO_READ_CORE_NUMBER(other);
   if (sym_section)
-        ud = bfd_section_userdata(sym_section);
+    ud = bfd_section_userdata(sym_section);
   if (ud)
-    sym_core = SHF_CORE_NUMBER_GET(ud->region_flags);
+    sym_core = SHF_CORE_NUMBER_GET(ud->region->flags);
   if (sym_core == SHF_CORE_NUMBER_GET(osec->flags))
     return addr;
   core = sym_core;
   map = tricore_elf32_memory_map_lookup(addr, core);
   if (map != 0)
-      return (addr - map->origin) + map->alt_origin;
+    return (addr - map->origin) + map->alt_origin;
   return addr;
 }
 
