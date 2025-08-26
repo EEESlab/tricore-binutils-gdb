@@ -273,6 +273,19 @@ SECTIONS
     ${RELOCATING+*(.gnu.linkonce.sr.*)}
   } ${RELOCATING+> CODE_MEM}
 
+  ${RELOCATING+
+  /*
+   * Language Specific Data Area (LSDA).
+   * Used by C++ for try/catch/finally unwinding.
+   */
+  }
+
+  CORE_SEC(.gcc_except_table) ${RELOCATING- 0 }: ${RELOCATING+ALIGN(8)}
+  {
+    ${RELOCATING+__GCC_EXCEPT_TABLE_BEGIN__ = . ;}
+    ${RELOCATING+KEEP (*(.gcc_except_table))}
+    ${RELOCATING+__GCC_EXCEPT_TABLE_END__ = . ;}
+  } ${RELOCATING+> CODE_MEM}
 
   ${RELOCATING+
   /*
@@ -284,16 +297,16 @@ SECTIONS
    * the .eh_frame section from the executable.
    */
   }
+
   CORE_SEC(.eh_frame) ${RELOCATING- 0 }: ${RELOCATING+ALIGN(8)}
   {
-    ${RELOCATING+*(.gcc_except_table)}
     ${RELOCATING+__EH_FRAME_BEGIN__ = . ;}
     ${RELOCATING+KEEP (*(.eh_frame))}
     ${RELOCATING-*(.eh_frame)}
     ${RELOCATING+__EH_FRAME_END__ = . ;}
   } ${RELOCATING+> CODE_MEM}
 
-  .jcr          ${RELOCATING-0} : { KEEP (*(.jcr)) } ${RELOCATING+> CODE_MEM}
+  .jnguagecr          ${RELOCATING-0} : { KEEP (*(.jcr)) } ${RELOCATING+> CODE_MEM}
 
   ${RELOCATING+${CTOR}}
   ${RELOCATING+${DTOR}}
